@@ -1,0 +1,57 @@
+com.jobtracking
+ ├── config
+ ├── common
+ │   ├── dto
+ │   ├── response
+ │   ├── exception
+ │   ├── enums
+ │   └── utils
+ │
+ ├── auth
+ │   ├── controller
+ │   ├── service
+ │   ├── repository
+ │   ├── entity
+ │   └── dto
+ │
+ ├── user
+ │   ├── controller
+ │   ├── service
+ │   ├── repository
+ │   ├── entity
+ │   └── dto
+ │
+ ├── company
+ │   ├── controller
+ │   ├── service
+ │   ├── repository
+ │   ├── entity
+ │   └── dto
+ │
+ ├── job
+ │   ├── controller
+ │   ├── service
+ │   ├── repository
+ │   ├── entity
+ │   └── dto
+ │
+ ├── application
+ │   ├── controller
+ │   ├── service
+ │   ├── repository
+ │   ├── entity
+ │   └── dto
+ │
+ ├── admin
+ │   ├── controller
+ │   ├── service
+ │   └── dto
+ │
+ ├── log
+ │   ├── entity
+ │   ├── repository
+ │   └── service
+ │
+ └── report
+     ├── controller
+     └── service
