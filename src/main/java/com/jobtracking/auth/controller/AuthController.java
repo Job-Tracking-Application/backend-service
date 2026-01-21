@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.jobtracking.auth.dto.LoginRequest;
 import com.jobtracking.auth.dto.LoginResponse;
 import com.jobtracking.auth.dto.RegisterRequest;
+import com.jobtracking.auth.repository.UserRepository;
 import com.jobtracking.auth.service.AuthService;
 
 import lombok.RequiredArgsConstructor;

@@ -8,7 +8,7 @@ import com.jobtracking.auth.dto.LoginResponse;
 import com.jobtracking.auth.dto.RegisterRequest;
 import com.jobtracking.auth.entity.User;
 import com.jobtracking.config.JwtUtil;
-import com.jobtracking.user.repository.UserRepository;
+import com.jobtracking.auth.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 

@@ -1,4 +1,4 @@
-package com.jobtracking.user.repository;
+package com.jobtracking.auth.repository;
 
 import java.util.Optional;
 
