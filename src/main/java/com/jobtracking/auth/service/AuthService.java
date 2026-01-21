@@ -30,7 +30,6 @@ public class AuthService {
 		            .passwordHash(passwordEncoder.encode(request.getPassword()))
 		            .roleId(request.getRoleId())
 		            .fullname(request.getFullname())
-		            .active(true)
 		            .build();
 		
 		userRepository.save(user);

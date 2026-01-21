@@ -5,11 +5,12 @@ public class RoleMapper {
 	}
 
 	public static String toAuthority(Integer roleId) {
+		if (roleId == null) return "ROLE_ANONYMOUS";
 		return switch (roleId) {
-		case 1 -> "ADMIN";
-		case 2 -> "RECRUITER";
-		case 3 -> "JOB_SEEKER";
-		default -> "UNKNOWN";
+		case 1 -> "ROLE_ADMIN";
+		case 2 -> "ROLE_RECRUITER";
+		case 3 -> "ROLE_JOB_SEEKER";
+		default -> "ROLE_UNKNOWN";
 		};
 	}
 }

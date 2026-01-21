@@ -8,6 +8,7 @@ com.jobtracking
 │       ├── AdminStatsResponse.java
 │       ├── AdminUserResponse.java
 │       └── AdminJobResponse.java
+        └── AdminCompanyResponse.java
 │
 ├── application
 │   ├── controller

@@ -35,15 +35,7 @@ public class User {
     @Column(length = 200)
     private String fullname;
 
-    @Column(name = "language_pref")
-    private String languagePref;
 
-    @Lob
-    @Column(name = "sensitive_info")
-    private byte[] sensitiveInfo;
-
-    @Column(nullable = false)
-    private Boolean active = true;
 
     @Column(name = "created_at", updatable = false, insertable = false)
     private LocalDateTime createdAt;
@@ -51,6 +43,4 @@ public class User {
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
-    @Column(columnDefinition = "json")
-    private String extension;
 }
