@@ -27,6 +27,7 @@ public class SecurityConfig {
 		.sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 		.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/auth/**").permitAll()
+				.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**").permitAll()
 				.requestMatchers("/admin/**").hasAuthority("ADMIN")
 				.requestMatchers("/jobs/create").hasAuthority("RECRUITER")
 				.requestMatchers("/applications/manage/**").hasAuthority("RECRUITER")
