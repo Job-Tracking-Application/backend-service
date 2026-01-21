@@ -56,9 +56,11 @@ com.jobtracking
 │   │   └── CustomException.java
 │   ├── response
 │   │   └── ApiResponse.java
-│   └── utils
-│       ├── RoleMapper.java
-│       └── SecurityUtil.java
+│   ├── utils
+│   │   ├── RoleMapper.java
+│   │   └── SecurityUtil.java
+│   └── entity
+│       └── Skill.java
 │
 ├── config
 │   ├── SecurityConfig.java
@@ -77,7 +79,8 @@ com.jobtracking
 │   │   ├── JobResponse.java
 │   │   └── JobListResponse.java
 │   ├── entity
-│   │   └── Job.java
+│   │   ├── Job.java
+│   │   └── JobSkill.java
 │   └── repository
 │       └── JobRepository.java
 │
@@ -102,8 +105,14 @@ com.jobtracking
 │   ├── dto
 │   │   ├── ProfileResponse.java
 │   │   └── UpdateProfileRequest.java
+│   ├── entity
+│   │   ├── JobSeekerProfile.java
+│   │   ├── RecruiterProfile.java
+│   │   └── JobSeekerSkill.java
 │   └── repository
-│       └── ProfileRepository.java
+│       ├── JobSeekerProfileRepository.java
+│       ├── RecruiterProfileRepository.java
+│       └── JobSeekerSkillRepository.java
 │
 └── report
     ├── controller

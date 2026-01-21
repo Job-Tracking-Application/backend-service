@@ -18,7 +18,6 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // corresponds to `username`
     @Column(nullable = false, unique = true, length = 100)
     private String username;
 
@@ -37,7 +36,7 @@ public class User {
     private String fullname;
 
     @Column(name = "language_pref")
-    private String languagePref; // en / mr
+    private String languagePref;
 
     @Lob
     @Column(name = "sensitive_info")
