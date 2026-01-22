@@ -45,10 +45,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Integer roleId=claims.get("roleId",Integer.class);
                 
                 String authority=RoleMapper.toAuthority(roleId);
-
+                String userId = claims.getSubject();
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                roleId,
+                                userId,
                                 null,
                                 Collections.singletonList(new SimpleGrantedAuthority(authority))
                         );

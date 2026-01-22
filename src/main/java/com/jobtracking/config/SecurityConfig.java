@@ -31,6 +31,7 @@ public class SecurityConfig {
 				.requestMatchers("/jobs/create").hasAuthority("RECRUITER")
 				.requestMatchers("/applications/manage/**").hasAuthority("RECRUITER")
 				.requestMatchers("/applications/me").hasAuthority("JOB_SEEKER")
+				.requestMatchers("/profile/jobseeker").hasAuthority("JOB_SEEKER")
 		.anyRequest().authenticated()//Everything else protected
 		)
 		.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
