@@ -47,7 +47,7 @@ public class AdminService {
 
 		return jobRepo.findAll().stream()
 				.map(j -> new AdminJobResponse(j.getId(), j.getTitle(),
-						companyNames.getOrDefault(j.getCompanyId(), "Unknown"), j.getStatus(), j.getCreatedAt()))
+						companyNames.getOrDefault(j.getCompanyId(), "Unknown"), j.getIsActive(), j.getCreatedAt()))
 				.toList();
 	}
 
@@ -63,5 +63,30 @@ public class AdminService {
 						c.getCreatedAt()
 						))
 				.toList();
+	}
+
+	public void updateUserStatus(Long userId, Boolean active) {
+		userRepo.findById(userId).ifPresent(u -> {
+			u.setActive(active);
+			userRepo.save(u);
+		});
+	}
+
+	public void updateUserRole(Long userId, Integer roleId) {
+		userRepo.findById(userId).ifPresent(u -> {
+			u.setRoleId(roleId);
+			userRepo.save(u);
+		});
+	}
+
+	public void deleteJob(Long jobId) {
+		jobRepo.deleteById(jobId);
+	}
+
+	public void verifyJob(Long jobId) {
+		jobRepo.findById(jobId).ifPresent(j -> {
+			j.setIsActive(true);
+			jobRepo.save(j);
+		});
 	}
 }

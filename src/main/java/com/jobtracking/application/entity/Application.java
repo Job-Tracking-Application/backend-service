@@ -22,17 +22,29 @@ public class Application {
     @Column(name = "job_id", nullable = false)
     private Long jobId;
 
-    @Column(name = "job_seeker_user_id", nullable = false)
+    @Column(name = "seeker_id", nullable = false)
     private Long jobSeekerUserId;
+
+    @Column(name = "resume_path", length = 500)
+    private String resumePath;
+
+    @Column(name = "cover_letter", columnDefinition = "TEXT")
+    private String coverLetter;
 
     @Column(nullable = false, length = 50)
     private String status;
+
+    @Column(name = "recruiter_notes", columnDefinition = "TEXT")
+    private String recruiterNotes;
 
     @Column(name = "applied_at", updatable = false)
     private LocalDateTime appliedAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "completion_datetime")
+    private LocalDateTime completionDatetime;
 
     @Column(columnDefinition = "json")
     private String extension;

@@ -6,6 +6,6 @@ public record AdminJobResponse(
     Long id,
     String title,
     String companyName,
-    String status,
+    Boolean isActive,
     LocalDateTime createdAt
 ) {}

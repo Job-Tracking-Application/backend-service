@@ -12,31 +12,31 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret}") //take from application.properties
     private String secret;
 
-    @Value("${jwt.expiration-ms}")
+    @Value("${jwt.expiration-ms}") //take from application.properties
     private long expirationMs;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes()); //get the secret key in the form of bytes and create a key for signing the token
     }
 
     public String generateToken(Long userId, Integer roleId) {
         return Jwts.builder()
-                .subject(userId.toString())
-                .claim("roleId", roleId)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationMs))
-                .signWith(getSigningKey())
-                .compact();
+                .subject(userId.toString()) //set the subject of the token
+                .claim("roleId", roleId) //set the roleId of the token
+                .issuedAt(new Date()) //set the issuedAt of the token
+                .expiration(new Date(System.currentTimeMillis() + expirationMs)) //set the expiration of the token
+                .signWith(getSigningKey()) //sign the token
+                .compact(); //compact the token
     }
 
     public Claims extractClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        return Jwts.parser() //parse the token
+                .verifyWith(getSigningKey()) //verify the token using the signing key
+                .build() //build the token
+                .parseSignedClaims(token) //parse the signed claims of the token
+                .getPayload(); //get the payload of the token
     }
 }
