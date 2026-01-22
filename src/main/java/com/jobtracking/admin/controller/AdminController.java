@@ -2,7 +2,11 @@ package com.jobtracking.admin.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jobtracking.admin.dto.AdminApplicationResponse;
 import com.jobtracking.admin.dto.AdminCompanyResponse;
 import com.jobtracking.admin.dto.AdminJobResponse;
 import com.jobtracking.admin.dto.AdminStatsResponse;
@@ -30,6 +35,11 @@ public class AdminController {
 	public AdminController(AdminService adminService, AuditLogService auditLogService) {
 		this.adminService = adminService;
 		this.auditLogService = auditLogService;
+	}
+
+	private Long getCurrentUserId() {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		return auth != null ? (Long) auth.getPrincipal() : null;
 	}
 
 	@GetMapping("/stats")
@@ -59,22 +69,51 @@ public class AdminController {
 
 	@PatchMapping("/users/{id}/status")
 	public void updateUserStatus(@PathVariable Long id, @RequestParam Boolean active) {
-		adminService.updateUserStatus(id, active);
+		adminService.updateUserStatus(id, active, getCurrentUserId());
 	}
 
 	@PatchMapping("/users/{id}/role")
 	public void updateUserRole(@PathVariable Long id, @RequestParam Integer roleId) {
-		adminService.updateUserRole(id, roleId);
+		adminService.updateUserRole(id, roleId, getCurrentUserId());
 	}
 
 	@DeleteMapping("/jobs/{id}")
 	public void deleteJob(@PathVariable Long id) {
-		adminService.deleteJob(id);
+		adminService.deleteJob(id, getCurrentUserId());
 	}
 
 	@PatchMapping("/jobs/{id}/verify")
 	public void verifyJob(@PathVariable Long id) {
-		adminService.verifyJob(id);
+		adminService.verifyJob(id, getCurrentUserId());
+	}
+
+	@PatchMapping("/companies/{id}/verify")
+	public void verifyCompany(@PathVariable Long id, @RequestParam Boolean verified) {
+		adminService.verifyCompany(id, verified, getCurrentUserId());
+	}
+
+	// ✅ List all applications with pagination and filtering
+	@GetMapping("/applications")
+	public ResponseEntity<Page<AdminApplicationResponse>> getApplications(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size,
+			@RequestParam(required = false) String status) {
+		
+		return ResponseEntity.ok(
+				adminService.getAllApplications(page, size, status));
+	}
+
+	// ✅ View single application
+	@GetMapping("/applications/{id}")
+	public ResponseEntity<AdminApplicationResponse> getApplication(@PathVariable Long id) {
+		return ResponseEntity.ok(adminService.getApplication(id));
+	}
+
+	// ✅ Delete abusive application
+	@DeleteMapping("/applications/{id}")
+	public ResponseEntity<String> deleteApplication(@PathVariable Long id) {
+		adminService.deleteApplication(id, getCurrentUserId());
+		return ResponseEntity.ok("Application deleted successfully");
 	}
 
 }
