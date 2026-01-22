@@ -15,12 +15,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProfileController {
      	private final ProfileService profileService;   	
-//     	@GetMapping("/me")
-//     	 public ProfileResponse getProfile(Authentication authentication) {
-//
-//            User user = (User) authentication.getPrincipal();
-//            return profileService.getJobSeekerProfile(user.getId());
-//        }
         @GetMapping("/jobseeker")
         public ProfileResponse getProfile(Authentication authentication) {
             Long userId = Long.valueOf(authentication.getPrincipal().toString());
