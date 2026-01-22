@@ -28,6 +28,12 @@ public class Organization {
     @Column(name = "contact_email", length = 255)
     private String contactEmail;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "recruiter_user_id")
+    private Long recruiterUserId;
+
     @Column(nullable = false)
     private Boolean verified = false;
 
