@@ -1,7 +1,8 @@
 package com.jobtracking.organization.service;
 
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,19 @@ public class OrganizationService {
     public OrganizationService(OrganizationRepository organizationRepository, AuditLogService auditLogService) {
         this.organizationRepository = organizationRepository;
         this.auditLogService = auditLogService;
+    }
+
+    public List<OrganizationResponse> getAllOrganizations() {
+        return organizationRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public OrganizationResponse getOrganizationById(Long organizationId) {
+        Organization organization = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new CustomException("Organization not found"));
+        
+        return mapToResponse(organization);
     }
 
     public OrganizationResponse createOrganization(OrganizationRequest request, Long recruiterUserId) {
@@ -71,13 +85,6 @@ public class OrganizationService {
         return mapToResponse(updated);
     }
 
-    public OrganizationResponse getOrganizationById(Long organizationId) {
-        Organization organization = organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new CustomException("Organization not found"));
-        
-        return mapToResponse(organization);
-    }
-
     public Optional<OrganizationResponse> getRecruiterOrganization(Long recruiterUserId) {
         return organizationRepository.findByRecruiterUserId(recruiterUserId)
                 .map(this::mapToResponse);
@@ -85,42 +92,6 @@ public class OrganizationService {
 
     public boolean hasOrganization(Long recruiterUserId) {
         return organizationRepository.existsByRecruiterUserId(recruiterUserId);
-    }
-
-    // Legacy methods for backward compatibility
-    public OrganizationResponse create(OrganizationRequest request) {
-        Organization org = new Organization();
-        org.setName(request.name());
-        org.setWebsite(request.website());
-        org.setCity(request.city());
-        org.setContactEmail(request.contactEmail());
-        org.setDescription(request.description());
-        org.setExtension(request.extension());
-        org.setVerified(false);
-
-        Organization saved = organizationRepository.save(org);
-        return mapToResponse(saved);
-    }
-
-    public OrganizationResponse update(Long id, OrganizationRequest request) {
-        Organization org = organizationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-        org.setName(request.name());
-        org.setWebsite(request.website());
-        org.setCity(request.city());
-        org.setContactEmail(request.contactEmail());
-        org.setDescription(request.description());
-        org.setExtension(request.extension());
-
-        Organization updated = organizationRepository.save(org);
-        return mapToResponse(updated);
-    }
-
-    public OrganizationResponse getById(Long id) {
-        Organization org = organizationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-        return mapToResponse(org);
     }
 
     private OrganizationResponse mapToResponse(Organization organization) {

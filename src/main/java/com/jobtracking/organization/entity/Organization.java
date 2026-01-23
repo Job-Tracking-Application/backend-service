@@ -3,8 +3,6 @@ package com.jobtracking.organization.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -36,7 +34,7 @@ public class Organization {
     @Column(name = "recruiter_user_id")
     private Long recruiterUserId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "BIT(1)")
     private Boolean verified = false;
 
     @Column(name = "created_at", updatable = false)

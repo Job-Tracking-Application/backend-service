@@ -12,7 +12,11 @@ public interface JobService {
 
     List<Job> getAllJobs();
 
+    List<Job> getJobsByRecruiter(Long recruiterId);
+
     Job updateJob(Long jobId, Job job, List<Long> skillIds);
 
     void deleteJob(Long jobId);
+    
+    void restoreJob(Long jobId);
 }

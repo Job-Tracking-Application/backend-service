@@ -1,5 +1,6 @@
 package com.jobtracking.job.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -24,25 +25,40 @@ public class JobServiceImpl implements JobService {
     @Override
     @Transactional
     public Job createJob(Job job, List<Long> skillIds) {
+        // Save the job first
         Job savedJob = jobRepository.save(job);
 
-        for (Long skillId : skillIds) {
-            JobSkill jobSkill = new JobSkill();
-            jobSkill.setId(new JobSkillId(savedJob.getId(), skillId));
-            jobSkillRepository.save(jobSkill);
+        // Only process skills if skillIds is not empty and not null
+        if (skillIds != null && !skillIds.isEmpty()) {
+            try {
+                for (Long skillId : skillIds) {
+                    JobSkill jobSkill = new JobSkill();
+                    jobSkill.setId(new JobSkillId(savedJob.getId(), skillId));
+                    jobSkillRepository.save(jobSkill);
+                }
+            } catch (Exception e) {
+                // Log the error but don't fail the job creation
+                System.err.println("Warning: Could not save job skills: " + e.getMessage());
+            }
         }
+        
         return savedJob;
     }
 
     @Override
     public Job getJobById(Long jobId) {
-        return jobRepository.findById(jobId)
+        return jobRepository.findByIdAndNotDeleted(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
     }
 
     @Override
     public List<Job> getAllJobs() {
-        return jobRepository.findAll();
+        return jobRepository.findByDeletedAtIsNull();
+    }
+
+    @Override
+    public List<Job> getJobsByRecruiter(Long recruiterId) {
+        return jobRepository.findByRecruiterUserIdAndDeletedAtIsNull(recruiterId);
     }
 
     @Override
@@ -73,8 +89,30 @@ public class JobServiceImpl implements JobService {
     @Override
     @Transactional
     public void deleteJob(Long jobId) {
-        jobSkillRepository.deleteByIdJobId(jobId);
-        jobRepository.deleteById(jobId);
+        Job job = getJobById(jobId);
+        
+        // Soft delete: set deletedAt timestamp instead of actually deleting
+        job.setDeletedAt(LocalDateTime.now());
+        job.setIsActive(false); // Also mark as inactive
+        
+        jobRepository.save(job);
+        
+        // Note: We don't delete job skills for soft delete to maintain data integrity
+        // jobSkillRepository.deleteByIdJobId(jobId);
+    }
+
+    @Override
+    @Transactional
+    public void restoreJob(Long jobId) {
+        // Find job including soft-deleted ones
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+        
+        // Restore the job
+        job.setDeletedAt(null);
+        job.setIsActive(true);
+        
+        jobRepository.save(job);
     }
 }
 

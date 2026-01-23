@@ -20,4 +20,23 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
             @Param("status") String status,
             Pageable pageable
     );
+    
+    // Dashboard stats methods
+    long countByJobSeekerUserId(Long jobSeekerId);
+    
+    long countByJobSeekerUserIdAndStatus(Long jobSeekerId, String status);
+    
+    @Query("""
+        SELECT COUNT(a) FROM Application a 
+        JOIN Job j ON a.jobId = j.id 
+        WHERE j.recruiterUserId = :recruiterId AND a.status = 'PENDING'
+    """)
+    long countPendingApplicationsForRecruiter(@Param("recruiterId") Long recruiterId);
+    
+    @Query("""
+        SELECT COUNT(a) FROM Application a 
+        JOIN Job j ON a.jobId = j.id 
+        WHERE j.recruiterUserId = :recruiterId AND a.status = 'HIRED'
+    """)
+    long countHiredApplicationsForRecruiter(@Param("recruiterId") Long recruiterId);
 }
