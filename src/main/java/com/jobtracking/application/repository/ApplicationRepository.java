@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.jobtracking.application.entity.Application;
+import com.jobtracking.application.enums.ApplicationStatus;
+import java.util.List;
 
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
@@ -17,25 +19,29 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
        WHERE (:status IS NULL OR a.status = :status)
     """)
     Page<Application> filterApplications(
-            @Param("status") String status,
+            @Param("status") ApplicationStatus status,
             Pageable pageable
     );
     
-    // Dashboard stats methods
-    long countByJobSeekerUserId(Long jobSeekerId);
+    // Methods from profile backend API
+    List<Application> findByJobId(Long jobId);
+    List<Application> findByUserId(Long userId);
+    boolean existsByJobIdAndUserId(Long jobId, Long userId);
     
-    long countByJobSeekerUserIdAndStatus(Long jobSeekerId, String status);
+    // Dashboard stats methods
+    long countByUserId(Long jobSeekerId);
+    long countByUserIdAndStatus(Long jobSeekerId, ApplicationStatus status);
     
     @Query("""
         SELECT COUNT(a) FROM Application a 
-        JOIN Job j ON a.jobId = j.id 
+        JOIN a.job j 
         WHERE j.recruiterUserId = :recruiterId AND a.status = 'PENDING'
     """)
     long countPendingApplicationsForRecruiter(@Param("recruiterId") Long recruiterId);
     
     @Query("""
         SELECT COUNT(a) FROM Application a 
-        JOIN Job j ON a.jobId = j.id 
+        JOIN a.job j 
         WHERE j.recruiterUserId = :recruiterId AND a.status = 'HIRED'
     """)
     long countHiredApplicationsForRecruiter(@Param("recruiterId") Long recruiterId);

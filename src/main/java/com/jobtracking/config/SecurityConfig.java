@@ -38,20 +38,21 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/organizations", "/organizations/test").permitAll()
                         .requestMatchers(HttpMethod.GET, "/test-jobs/**").permitAll()
                         .requestMatchers("/test-controller/**").permitAll()
+                        .requestMatchers("/recruiter/jobs/**").hasRole("RECRUITER")
                         .requestMatchers("/jobs/**").hasRole("RECRUITER")
                         .requestMatchers("/organizations/**").hasRole("RECRUITER")
                         .requestMatchers("/dashboard/**").authenticated()
-                        .requestMatchers("/test-controller/**").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/applications/manage/**").hasRole("RECRUITER")
+                        .requestMatchers("/applications/me").hasRole("JOB_SEEKER")
+                        .requestMatchers("/profile/jobseeker").hasRole("JOB_SEEKER")
+                        .requestMatchers("/profile/**").authenticated()
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/webjars/**")
                         .permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/jobs/**").hasRole("RECRUITER")
-                        .requestMatchers("/applications/manage/**").hasRole("RECRUITER")
-                        .requestMatchers("/applications/me").hasRole("JOB_SEEKER")
                         .anyRequest().authenticated()) // Everything else protected
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

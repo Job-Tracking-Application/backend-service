@@ -18,24 +18,26 @@ public class AuthService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtUtil jwtUtil;
-	
+
 	public void register(RegisterRequest request) {
-		if(userRepository.existsByEmail(request.getEmail())) {
+		if (userRepository.existsByEmail(request.getEmail())) {
 			throw new RuntimeException("Email already exists");
 		}
-		
-		 User user = User.builder()
-		            .username(request.getUsername())
-		            .email(request.getEmail())
-		            .passwordHash(passwordEncoder.encode(request.getPassword()))
-		            .roleId(request.getRoleId())
-		            .fullname(request.getFullname())
-		            .build();
-		
+
+		User user = User.builder()
+				.username(request.getUsername())
+				.email(request.getEmail())
+				.passwordHash(passwordEncoder.encode(request.getPassword()))
+				.roleId(request.getRoleId())
+				.fullname(request.getFullname())
+				.active(true)
+				.build();
+
 		userRepository.save(user);
 	}
-	
+
 	public LoginResponse login(LoginRequest request) {
+
 		User user = userRepository.findByEmail(request.getEmail())
 				.orElseThrow(() -> new RuntimeException("Invalid credentials"));
 

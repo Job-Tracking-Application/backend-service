@@ -6,11 +6,12 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+import com.jobtracking.application.enums.ApplicationStatus;
+import com.jobtracking.auth.entity.User;
+import com.jobtracking.job.entity.Job;
+
 @Entity
-@Table(name = "applications",
-       uniqueConstraints = @UniqueConstraint(
-           columnNames = {"job_id", "seeker_id"}
-       ))
+@Table(name = "applications", uniqueConstraints = @UniqueConstraint(columnNames = { "job_id", "seeker_id" }))
 @Getter
 @Setter
 public class Application {
@@ -19,12 +20,6 @@ public class Application {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "job_id", nullable = false)
-    private Long jobId;
-
-    @Column(name = "seeker_id", nullable = false)
-    private Long jobSeekerUserId;
-
     @Column(name = "resume_path", length = 500)
     private String resumePath;
 
@@ -32,7 +27,8 @@ public class Application {
     private String coverLetter;
 
     @Column(nullable = false, length = 50)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private ApplicationStatus status;
 
     @Column(name = "recruiter_notes", columnDefinition = "TEXT")
     private String recruiterNotes;
@@ -49,12 +45,21 @@ public class Application {
     @Column(columnDefinition = "json")
     private String extension;
 
+    /* ===== Relations ===== */
+    @ManyToOne
+    @JoinColumn(name = "seeker_id", nullable = false)
+    private User user; // applicant
+
+    @ManyToOne
+    @JoinColumn(name = "job_id", nullable = false)
+    private Job job;
+
     @PrePersist
     protected void onApply() {
         appliedAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         if (status == null) {
-            status = "APPLIED";
+            status = ApplicationStatus.APPLIED;
         }
     }
 

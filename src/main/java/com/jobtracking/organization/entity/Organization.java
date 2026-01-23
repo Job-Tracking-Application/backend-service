@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "companies")
 @Getter
@@ -16,44 +14,11 @@ public class Organization {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = 100)
     private String name;
-
-    @Column(length = 255)
-    private String website;
-
-    @Column(length = 150)
-    private String city;
-
-    @Column(name = "contact_email", length = 255)
-    private String contactEmail;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "recruiter_user_id")
-    private Long recruiterUserId;
-
-    @Column(nullable = false, columnDefinition = "BIT(1)")
-    private Boolean verified = false;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(columnDefinition = "json")
-    private String extension;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+    private String website;
 }
