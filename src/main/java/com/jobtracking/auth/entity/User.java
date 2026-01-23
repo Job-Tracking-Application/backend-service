@@ -51,6 +51,8 @@ public class User {
     private String extension;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
+
 
 }

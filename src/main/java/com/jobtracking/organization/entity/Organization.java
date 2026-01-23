@@ -3,6 +3,8 @@ package com.jobtracking.organization.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -31,10 +33,14 @@ public class Organization {
     @Column(nullable = false)
     private Boolean verified = false;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
+    // auto set on INSERT
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", insertable = false, updatable = false)
+    // auto set on UPDATE
+    @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @Column(columnDefinition = "json")

@@ -2,6 +2,7 @@ package com.jobtracking.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -31,7 +32,7 @@ public class SecurityConfig {
 				.requestMatchers("/auth/**").permitAll()
 				.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**").permitAll()
 				.requestMatchers("/admin/**").hasRole("ADMIN")
-				.requestMatchers("/jobs/create").hasRole("RECRUITER")
+				.requestMatchers("/api/jobs/**").hasRole("RECRUITER")
 				.requestMatchers("/applications/manage/**").hasRole("RECRUITER")
 				.requestMatchers("/applications/me").hasRole("JOB_SEEKER")
 		.anyRequest().authenticated()//Everything else protected
