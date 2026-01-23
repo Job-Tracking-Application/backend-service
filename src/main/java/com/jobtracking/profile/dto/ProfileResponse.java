@@ -7,13 +7,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
 public class ProfileResponse {
-	private String fullName;
+    private String fullName;
     private String email;
     private String userName;
     private List<String> skills;

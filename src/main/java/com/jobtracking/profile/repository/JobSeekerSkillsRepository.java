@@ -10,5 +10,7 @@ import com.jobtracking.profile.entity.JobSeekerSkill;
 public interface JobSeekerSkillsRepository extends JpaRepository<JobSeekerSkill,Long>{
 
 	List<JobSeekerSkill> findByJobSeekerProfile(JobSeekerProfile jobSeekerProfile);
+
+	void deleteByJobSeekerProfileId(Long id);
 	
 }
