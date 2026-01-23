@@ -1,7 +1,5 @@
 package com.jobtracking.job.entity;
 
-import com.jobtracking.organization.entity.Organization;
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

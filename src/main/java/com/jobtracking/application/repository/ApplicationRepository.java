@@ -35,7 +35,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     @Query("""
         SELECT COUNT(a) FROM Application a 
         JOIN a.job j 
-        WHERE j.recruiterUserId = :recruiterId AND a.status = 'PENDING'
+        WHERE j.recruiterUserId = :recruiterId AND a.status = 'APPLIED'
     """)
     long countPendingApplicationsForRecruiter(@Param("recruiterId") Long recruiterId);
     

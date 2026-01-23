@@ -2,6 +2,7 @@ package com.jobtracking.dashboard.service;
 
 import org.springframework.stereotype.Service;
 
+import com.jobtracking.application.enums.ApplicationStatus;
 import com.jobtracking.application.repository.ApplicationRepository;
 import com.jobtracking.dashboard.dto.DashboardStatsResponse;
 import com.jobtracking.job.repository.JobRepository;
@@ -39,13 +40,13 @@ public class DashboardService {
     public DashboardStatsResponse getJobSeekerStats(Long jobSeekerId) {
         try {
             // Count total applications by this job seeker
-            long totalApplications = applicationRepository.countByJobSeekerUserId(jobSeekerId);
+            long totalApplications = applicationRepository.countByUserId(jobSeekerId);
             
-            // Count pending applications
-            long pendingApplications = applicationRepository.countByJobSeekerUserIdAndStatus(jobSeekerId, "PENDING");
+            // Count pending applications (using APPLIED status)
+            long pendingApplications = applicationRepository.countByUserIdAndStatus(jobSeekerId, ApplicationStatus.APPLIED);
             
             // Count accepted applications
-            long acceptedApplications = applicationRepository.countByJobSeekerUserIdAndStatus(jobSeekerId, "HIRED");
+            long acceptedApplications = applicationRepository.countByUserIdAndStatus(jobSeekerId, ApplicationStatus.HIRED);
             
             return new DashboardStatsResponse(totalApplications, pendingApplications, acceptedApplications);
         } catch (Exception e) {
