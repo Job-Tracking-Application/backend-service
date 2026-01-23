@@ -41,11 +41,13 @@ public class User {
     @Column(name = "sensitive_info")
     private byte[] sensitiveInfo;
 
-    @Column(name = "created_at", updatable = false, insertable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "created_at", updatable = false)
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "updated_at", insertable = false, updatable = false)
-    private LocalDateTime updatedAt;
+    @Column(name = "updated_at")
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Column(columnDefinition = "json")
     private String extension;
@@ -54,5 +56,19 @@ public class User {
     @Builder.Default
     private Boolean active = true;
 
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (updatedAt == null) {
+            updatedAt = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
 }

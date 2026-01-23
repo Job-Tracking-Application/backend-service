@@ -32,11 +32,21 @@ public class JwtUtil {
                 .compact(); //compact the token
     }
 
+    public boolean isTokenValid(String token) {
+        try {
+            Claims claims = extractClaims(token);
+            Date expiration = claims.getExpiration();
+            return expiration.after(new Date());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public Claims extractClaims(String token) {
-        return Jwts.parser() //parse the token
-                .verifyWith(getSigningKey()) //verify the token using the signing key
-                .build() //build the token
-                .parseSignedClaims(token) //parse the signed claims of the token
-                .getPayload(); //get the payload of the token
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

@@ -30,19 +30,32 @@ public class Organization {
     @Column(name = "contact_email", length = 255)
     private String contactEmail;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "recruiter_user_id")
+    private Long recruiterUserId;
+
     @Column(nullable = false)
     private Boolean verified = false;
 
-    // auto set on INSERT
-    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    // auto set on UPDATE
-    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @Column(columnDefinition = "json")
     private String extension;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

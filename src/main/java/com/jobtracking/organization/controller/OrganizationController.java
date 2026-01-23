@@ -1,35 +1,110 @@
 package com.jobtracking.organization.controller;
 
+import java.util.Optional;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.jobtracking.common.response.ApiResponse;
 import com.jobtracking.organization.dto.OrganizationRequest;
 import com.jobtracking.organization.dto.OrganizationResponse;
 import com.jobtracking.organization.service.OrganizationService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/company")
-@RequiredArgsConstructor
+@RequestMapping("/api/organization")
 public class OrganizationController {
 
     private final OrganizationService organizationService;
 
-    
-    @GetMapping("/{id}")
-    public OrganizationResponse getCompany(@PathVariable Long id) {
-        return organizationService.getById(id);
+    public OrganizationController(OrganizationService organizationService) {
+        this.organizationService = organizationService;
     }
 
-    
+    private Long getCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? (Long) auth.getPrincipal() : null;
+    }
+
     @PostMapping
-    public OrganizationResponse createCompany(@RequestBody OrganizationRequest request) {
-        return organizationService.create(request);
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<ApiResponse<OrganizationResponse>> createOrganization(
+            @Valid @RequestBody OrganizationRequest request) {
+        
+        Long recruiterUserId = getCurrentUserId();
+        OrganizationResponse response = organizationService.createOrganization(request, recruiterUserId);
+        
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, "Company profile created successfully", response));
     }
 
-    
     @PutMapping("/{id}")
-    public OrganizationResponse updateCompany(
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<ApiResponse<OrganizationResponse>> updateOrganization(
             @PathVariable Long id,
-            @RequestBody OrganizationRequest request) {
-        return organizationService.update(id, request);
+            @Valid @RequestBody OrganizationRequest request) {
+        
+        Long recruiterUserId = getCurrentUserId();
+        OrganizationResponse response = organizationService.updateOrganization(id, request, recruiterUserId);
+        
+        return ResponseEntity.ok(new ApiResponse<>(true, "Company profile updated successfully", response));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<OrganizationResponse>> getOrganization(@PathVariable Long id) {
+        OrganizationResponse response = organizationService.getOrganizationById(id);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Company profile retrieved successfully", response));
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<ApiResponse<OrganizationResponse>> getMyOrganization() {
+        Long recruiterUserId = getCurrentUserId();
+        Optional<OrganizationResponse> response = organizationService.getRecruiterOrganization(recruiterUserId);
+        
+        if (response.isPresent()) {
+            return ResponseEntity.ok(new ApiResponse<>(true, "Company profile retrieved successfully", response.get()));
+        } else {
+            return ResponseEntity.ok(new ApiResponse<>(true, "No company profile found", null));
+        }
+    }
+
+    @GetMapping("/exists")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<ApiResponse<Boolean>> hasOrganization() {
+        Long recruiterUserId = getCurrentUserId();
+        boolean exists = organizationService.hasOrganization(recruiterUserId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Organization existence checked", exists));
+    }
+
+    // Legacy endpoints for backward compatibility
+    @GetMapping("/company/{id}")
+    public ResponseEntity<ApiResponse<OrganizationResponse>> getCompany(@PathVariable Long id) {
+        return getOrganization(id);
+    }
+
+    @PostMapping("/company")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<ApiResponse<OrganizationResponse>> createCompany(@Valid @RequestBody OrganizationRequest request) {
+        return createOrganization(request);
+    }
+
+    @PutMapping("/company/{id}")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<ApiResponse<OrganizationResponse>> updateCompany(
+            @PathVariable Long id,
+            @Valid @RequestBody OrganizationRequest request) {
+        return updateOrganization(id, request);
     }
 }
