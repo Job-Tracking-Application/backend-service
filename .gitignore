@@ -31,3 +31,20 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Temporary files ###
+*.tmp
+*.temp
+*.log
+Errors.txt
+Output.txt
+
+### Documentation ###
+*Fix.md
+*Debug*.md
+Structure.md
+Folder_Structure.txt
+*.docx
+
+### Database ###
+DatabaseCleanup.sql

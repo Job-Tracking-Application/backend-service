@@ -9,6 +9,5 @@ public record AdminUserResponse(
 		String role,
 		Boolean active,
 		LocalDateTime createdAt
-
 ) {
-};
+}

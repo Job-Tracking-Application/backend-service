@@ -83,8 +83,9 @@ public class AdminController {
 	}
 
 	@PatchMapping("/jobs/{id}/verify")
-	public void verifyJob(@PathVariable Long id) {
+	public ResponseEntity<String> verifyJob(@PathVariable Long id) {
 		adminService.verifyJob(id, getCurrentUserId());
+		return ResponseEntity.ok("Job verification completed");
 	}
 
 	@PatchMapping("/companies/{id}/verify")

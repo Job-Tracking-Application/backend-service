@@ -36,16 +36,15 @@ public class AuthService {
 	}
 	
 	public LoginResponse login(LoginRequest request) {
+		User user = userRepository.findByEmail(request.getEmail())
+				.orElseThrow(() -> new RuntimeException("Invalid credentials"));
 
-	    User user = userRepository.findByEmail(request.getEmail())
-	            .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+		if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+			throw new RuntimeException("Invalid credentials");
+		}
 
-	    if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-	        throw new RuntimeException("Invalid credentials");
-	    }
+		String token = jwtUtil.generateToken(user.getId(), user.getRoleId());
 
-	    String token = jwtUtil.generateToken(user.getId(), user.getRoleId());
-
-	    return new LoginResponse(token, user.getId(), user.getRoleId());
+		return new LoginResponse(token, user.getId(), user.getRoleId());
 	}
 }

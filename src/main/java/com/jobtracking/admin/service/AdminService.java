@@ -1,6 +1,7 @@
 package com.jobtracking.admin.service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -45,7 +46,12 @@ public class AdminService {
 	}
 
 	public AdminStatsResponse getStats() {
-		return new AdminStatsResponse(userRepo.count(), jobRepo.count(), orgRepo.count(), appRepo.count());
+		long userCount = userRepo.count();
+		long jobCount = jobRepo.count();
+		long orgCount = orgRepo.count();
+		long appCount = appRepo.count();
+		
+		return new AdminStatsResponse(userCount, jobCount, orgCount, appCount);
 	}
 
 	public List<AdminUserResponse> getAllUsers() {
@@ -54,14 +60,25 @@ public class AdminService {
 	}
 
 	public List<AdminJobResponse> getAllJobs() {
-		Map<Long, String> companyNames = orgRepo.findAll().stream().collect(
-				Collectors.toMap(Organization::getId, Organization::getName));
-
-		return jobRepo.findAll().stream()
+		Map<Long, String> companyNames = getCompanyNamesMap();
+		
+		List<Job> jobs = jobRepo.findAll();
+		
+		return jobs.stream()
 				.filter(j -> j.getDeletedAt() == null)
 				.map(j -> new AdminJobResponse(j.getId(), j.getTitle(),
 						companyNames.getOrDefault(j.getCompanyId(), "Unknown"), j.getIsActive(), j.getCreatedAt()))
 				.toList();
+	}
+
+	private Map<Long, String> getCompanyNamesMap() {
+		try {
+			return orgRepo.findAll().stream().collect(
+					Collectors.toMap(Organization::getId, Organization::getName));
+		} catch (Exception e) {
+			// Return empty map if companies can't be loaded
+			return new HashMap<>();
+		}
 	}
 
 	public List<AdminCompanyResponse> getAllCompanies() {
@@ -102,10 +119,14 @@ public class AdminService {
 	}
 
 	public void verifyJob(Long jobId, Long adminId) {
-		jobRepo.findById(jobId).ifPresent(j -> {
-			j.setIsActive(true);
+		jobRepo.findById(jobId).ifPresentOrElse(j -> {
+			// Toggle the active status
+			j.setIsActive(!j.getIsActive());
 			jobRepo.save(j);
-			auditLogService.log("JOB", jobId, "Verified", adminId);
+			auditLogService.log("JOB", jobId, 
+				j.getIsActive() ? "Activated" : "Deactivated", adminId);
+		}, () -> {
+			throw new RuntimeException("Job not found with ID: " + jobId);
 		});
 	}
 
@@ -123,9 +144,9 @@ public class AdminService {
 		
 		Page<Application> applications = appRepo.filterApplications(status, pageable);
 		
-		Map<Long, String> jobTitles = jobRepo.findAll().stream().collect(
+		final Map<Long, String> jobTitles = jobRepo.findAll().stream().collect(
 				Collectors.toMap(Job::getId, Job::getTitle));
-		Map<Long, String> userNames = userRepo.findAll().stream().collect(
+		final Map<Long, String> userNames = userRepo.findAll().stream().collect(
 				Collectors.toMap(User::getId, u -> u.getUsername()));
 
 		return applications.map(a -> new AdminApplicationResponse(
@@ -144,9 +165,9 @@ public class AdminService {
 		Application application = appRepo.findById(id)
 				.orElseThrow(() -> new RuntimeException("Application not found"));
 		
-		Map<Long, String> jobTitles = jobRepo.findAll().stream().collect(
+		final Map<Long, String> jobTitles = jobRepo.findAll().stream().collect(
 				Collectors.toMap(Job::getId, Job::getTitle));
-		Map<Long, String> userNames = userRepo.findAll().stream().collect(
+		final Map<Long, String> userNames = userRepo.findAll().stream().collect(
 				Collectors.toMap(User::getId, u -> u.getUsername()));
 
 		return new AdminApplicationResponse(

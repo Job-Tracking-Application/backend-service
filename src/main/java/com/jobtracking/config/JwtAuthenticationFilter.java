@@ -54,9 +54,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authorities);
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            
         } catch (Exception e) {
-            // Invalid token - continue without authentication
-            // Spring Security will handle unauthorized access
+            // Clear any partial authentication
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
