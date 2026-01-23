@@ -22,7 +22,7 @@ import com.jobtracking.application.entity.Application;
 import com.jobtracking.application.dto.ApplyJobRequest;
 
 @RestController
-@RequestMapping("/application")
+@RequestMapping("/applications")
 @RequiredArgsConstructor
 public class ApplicationController {
     private final ApplicationService applicationService;
@@ -30,7 +30,8 @@ public class ApplicationController {
     @PostMapping("/{jobId}")
     public ResponseEntity<String> createApplication(@PathVariable Long jobId,
             @RequestBody ApplyJobRequest applyJobRequest, Authentication authentication) {
-        try {Long userId = Long.valueOf(authentication.getName());
+        try {
+        	Long userId = Long.valueOf(authentication.getName());
         applicationService.createApplication(jobId, userId,
                 applyJobRequest); 
             	  return ResponseEntity.ok("Job applied successfully");
@@ -46,7 +47,7 @@ public class ApplicationController {
               }
     }
 
-    @GetMapping("/my")
+    @GetMapping("/me")
     public ResponseEntity<?> getMyApplications(Authentication authentication) {
         try {
             Long userId = Long.valueOf(authentication.getName());
@@ -68,9 +69,7 @@ public class ApplicationController {
                         .status(HttpStatus.NO_CONTENT)
                         .build();
             }
-            return ResponseEntity.ok(applications);
-
-        
+            return ResponseEntity.ok(applications);        
     }
 
     @PatchMapping("/manage/{id}")

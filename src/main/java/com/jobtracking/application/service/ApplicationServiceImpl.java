@@ -38,14 +38,13 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Job not found"));
-
         // 🔒 First guard: service-level duplicate check
-        if (applicationRepository.existsByJobIdAndUserId(jobId, userId)) {
+        if (applicationRepository.existsByJob_IdAndUser_Id(jobId, userId)) {
             throw new IllegalStateException("You have already applied for this job");
         }
+
         
         Application application = new Application();
         application.setJob(job);
@@ -85,7 +84,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     public ApplicationResponse updateApplication(Long id, UpdateStatusRequest updateStatusRequest) {
         return applicationRepository.findById(id)
                 .map(application -> {
-                    application.setStatus(ApplicationStatus.valueOf(updateStatusRequest.status()));
+                    application.setStatus(ApplicationStatus.valueOf(updateStatusRequest.status().toUpperCase()));
                     return applicationRepository.save(application);
                 })
                 .map(this::mapToApplicationResponse)

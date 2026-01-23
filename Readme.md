@@ -43,40 +43,24 @@
 
 ---
 
-## 📦 Frontend Integration
-
-### JavaScript Example
-```javascript
-const payload = {
-  fullName,
-  email,
-  userName,
-  skills,
-  resume,
-  about,
-  education: JSON.stringify(education)
-};
-
 ## 3. Apply for a Job
-**Endpoint:** `POST /api/application/apply/{jobId}`
+**Endpoint:** `POST /api/application/{jobId}`
 
-### Path Variable
-| Name    | Type   | Description   |
-|------   |------  |-------------  |
-| `jobId` | number | ID of the job |
-
-### Request Body
+### Request Body Format
 ```json
 {
   "resume": "resume_v1.pdf"
 }
+```
+*(Optional: `coverLetter` can also be included)*
 
 ### ✅ Rules Enforced by Backend
-- Only `JOB_SEEKER` users can apply
-- One application per job per user
-- Duplicate applications are blocked at service + DB level
+- Only `JOB_SEEKER` users can apply.
+- One application per job per user.
+- Duplicate applications are blocked at service + DB level.
 
 ---
+
 ## 4. Get My Applications (Candidate View)
 **Endpoint:** `GET /api/application/my`
 
@@ -93,17 +77,20 @@ const payload = {
   }
 ]
 ```
+
 ### ✅ Notes
-- This endpoint is only for logged-in job seekers
-- Used for “My Applications” page
+- This endpoint is only for logged-in job seekers.
+- Used for “My Applications” page.
+
 ---
+
 ## 5. Get Applications for a Job (Recruiter / Admin)
 **Endpoint:** `GET /api/application/manage/{jobId}`
 
 ### Path Variable
-| Name  | Type   | Description   |
-|------ |------  |-------------  |
-|`jobId`| number | ID of the job |
+| Name | Type | Description |
+|------|------|-------------|
+| `jobId` | number | ID of the job |
 
 ### Response Example
 ```json
@@ -118,9 +105,11 @@ const payload = {
   }
 ]
 ```
+
 ### ✅ Notes
-- Used on Manage Applications screen
-- Shows candidate skills from profile
+- Used on Manage Applications screen.
+- Shows candidate skills from profile.
+
 ---
 
 ## 6. Update Application Status
@@ -131,3 +120,5 @@ const payload = {
 {
   "status": "SHORTLISTED"
 }
+```
+**Valid Statuses:** `APPLIED`, `SHORTLISTED`, `REJECTED`, `INTERVIEW_SCHEDULED`, `HIRED`.
