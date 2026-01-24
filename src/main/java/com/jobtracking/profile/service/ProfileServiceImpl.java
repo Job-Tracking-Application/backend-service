@@ -68,11 +68,12 @@ public class ProfileServiceImpl implements ProfileService {
 			}
 		}
 		
-		// Return record using constructor
+		// Return record using constructor - include phone field from User entity
 		return new ProfileResponse(
 				user.getFullname(),
 				user.getEmail(),
 				user.getUsername(),
+				user.getPhone(), // Include phone from User entity
 				skills,
 				profile.getResumeLink(),
 				profile.getBioEn(),
@@ -87,6 +88,9 @@ public class ProfileServiceImpl implements ProfileService {
 				.orElseThrow(() -> new RuntimeException("User not found"));
 
 		user.setFullname(req.fullName());
+		if (req.phone() != null) {
+			user.setPhone(req.phone()); // Update phone in User entity for job seekers
+		}
 		// Username is auto-generated, not user-editable
 		userRepo.save(user);
 
@@ -203,6 +207,5 @@ public class ProfileServiceImpl implements ProfileService {
 		// Log profile update
 		auditLogService.log("RECRUITER_PROFILE", profile.getId(), "UPDATED", userId);
 	}
-
 
 }

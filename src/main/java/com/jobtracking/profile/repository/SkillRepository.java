@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.jobtracking.profile.entity.Skill;
 
-public interface SkillRepository extends JpaRepository<Skill,Long> {
+public interface SkillRepository extends JpaRepository<Skill, Long> {
 
 	Optional<Skill> findByName(String skillName);
 

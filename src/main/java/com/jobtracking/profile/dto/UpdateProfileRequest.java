@@ -14,6 +14,8 @@ public record UpdateProfileRequest(
                 @Size(max = 255, message = "Email must not exceed 255 characters")
                 String email,
                 
+                String userName,
+                String phone,
                 List<String> skills,
                 
                 @Size(max = 500, message = "Resume URL must not exceed 500 characters")

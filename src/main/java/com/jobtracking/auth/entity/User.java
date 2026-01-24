@@ -51,6 +51,9 @@ public class User {
 
     @Column(columnDefinition = "json")
     private String extension;
+    
+    @Column(name = "phone_no")
+    private String phone;
 
     @Column(nullable = false)
     @Builder.Default
