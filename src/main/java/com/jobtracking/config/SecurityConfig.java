@@ -49,8 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/applications/check/**").hasRole("JOB_SEEKER")
                         .requestMatchers(HttpMethod.POST, "/applications/**").hasRole("JOB_SEEKER") // Job seekers can apply for jobs
                         .requestMatchers("/profile/jobseeker").hasRole("JOB_SEEKER")
-                        .requestMatchers("/profile/jobseeker/create-demo-skills").hasRole("JOB_SEEKER")
-                        .requestMatchers("/profile/jobseeker/debug").hasRole("JOB_SEEKER")
+                        .requestMatchers("/profile/recruiter").hasRole("RECRUITER")
                         .requestMatchers("/profile/**").authenticated()
                         .requestMatchers(
                                 "/v3/api-docs/**",

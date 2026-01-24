@@ -62,7 +62,6 @@ public class OrganizationController {
             try {
                 return Long.parseLong((String) principal);
             } catch (NumberFormatException e) {
-                System.err.println("Error parsing userId from principal: " + principal);
                 return null;
             }
         }

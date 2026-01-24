@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.jobtracking.audit.service.AuditLogService;
 import com.jobtracking.job.entity.Job;
 import com.jobtracking.job.entity.JobSkill;
 import com.jobtracking.job.entity.JobSkillId;
@@ -21,12 +22,17 @@ public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
     private final JobSkillRepository jobSkillRepository;
+    private final AuditLogService auditLogService;
 
     @Override
     @Transactional
     public Job createJob(Job job, List<Long> skillIds) {
         // Save the job first
         Job savedJob = jobRepository.save(job);
+        
+        // Log job creation
+        auditLogService.log("JOB", savedJob.getId(), "CREATED", savedJob.getRecruiterUserId(), 
+            "Created job: " + savedJob.getTitle());
 
         // Only process skills if skillIds is not empty and not null
         if (skillIds != null && !skillIds.isEmpty()) {
@@ -38,7 +44,7 @@ public class JobServiceImpl implements JobService {
                 }
             } catch (Exception e) {
                 // Log the error but don't fail the job creation
-                System.err.println("Warning: Could not save job skills: " + e.getMessage());
+                // Skill creation failed, but job creation succeeded
             }
         }
         
@@ -74,6 +80,10 @@ public class JobServiceImpl implements JobService {
         existingJob.setJobType(job.getJobType());
 
         Job updatedJob = jobRepository.save(existingJob);
+        
+        // Log job update
+        auditLogService.log("JOB", updatedJob.getId(), "UPDATED", updatedJob.getRecruiterUserId(), 
+            "Updated job: " + updatedJob.getTitle());
 
         // update skills
         jobSkillRepository.deleteByIdJobId(jobId);
@@ -96,6 +106,10 @@ public class JobServiceImpl implements JobService {
         job.setIsActive(false); // Also mark as inactive
         
         jobRepository.save(job);
+        
+        // Log job deletion (soft delete)
+        auditLogService.log("JOB", jobId, "DELETED", job.getRecruiterUserId(), 
+            "Soft deleted job: " + job.getTitle());
         
         // Note: We don't delete job skills for soft delete to maintain data integrity
         // jobSkillRepository.deleteByIdJobId(jobId);

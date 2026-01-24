@@ -3,6 +3,7 @@ package com.jobtracking.application.service;
 import java.util.List;
 import com.jobtracking.application.entity.Application;
 import com.jobtracking.application.repository.ApplicationRepository;
+import com.jobtracking.audit.service.AuditLogService;
 import com.jobtracking.profile.repository.JobSeekerProfileRepository;
 import com.jobtracking.profile.entity.JobSeekerProfile;
 import com.jobtracking.auth.entity.User;
@@ -32,6 +33,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
     private final OrganizationRepository organizationRepository;
+    private final AuditLogService auditLogService;
 
     @Override
     public void createApplication(Long jobId, Long userId, ApplyJobRequest applyJobRequest) {
@@ -40,8 +42,8 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Job not found"));
-        // 🔒 First guard: service-level duplicate check
-        if (applicationRepository.existsByJob_IdAndUser_Id(jobId, userId)) {
+        // First guard: service-level duplicate check
+        if (applicationRepository.existsByJobIdAndUserId(jobId, userId)) {
             throw new IllegalStateException("You have already applied for this job");
         }
 
@@ -51,9 +53,14 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setUser(user);
         application.setResumePath(applyJobRequest.resume());
         try {
-            applicationRepository.save(application);
+            Application savedApplication = applicationRepository.save(application);
+            
+            // Log job application
+            auditLogService.log("APPLICATION", savedApplication.getId(), "APPLIED", userId, 
+                "Applied for job: " + job.getTitle());
+                
         } catch (DataIntegrityViolationException ex) {
-            // 🔒 Second guard: DB-level safety (race condition)
+            // Second guard: DB-level safety (race condition)
             throw new IllegalStateException("You have already applied for this job");
         }
     }
@@ -94,8 +101,18 @@ public class ApplicationServiceImpl implements ApplicationService {
     public ApplicationResponse updateApplication(Long id, UpdateStatusRequest updateStatusRequest) {
         return applicationRepository.findById(id)
                 .map(application -> {
-                    application.setStatus(ApplicationStatus.valueOf(updateStatusRequest.status().toUpperCase()));
-                    return applicationRepository.save(application);
+                    ApplicationStatus oldStatus = application.getStatus();
+                    ApplicationStatus newStatus = ApplicationStatus.valueOf(updateStatusRequest.status().toUpperCase());
+                    
+                    application.setStatus(newStatus);
+                    Application savedApplication = applicationRepository.save(application);
+                    
+                    // Log status change (performed by recruiter/admin)
+                    auditLogService.log("APPLICATION", savedApplication.getId(), "STATUS_CHANGED", 
+                        savedApplication.getJob().getRecruiterUserId(), 
+                        "Changed from " + oldStatus + " to " + newStatus);
+                    
+                    return savedApplication;
                 })
                 .map(this::mapToApplicationResponse)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
@@ -118,7 +135,6 @@ public class ApplicationServiceImpl implements ApplicationService {
                             .map(s -> s.getSkill().getName())
                             .toList();
                 } catch (Exception e) {
-                    System.err.println("Error loading skills for user " + user.getId() + ": " + e.getMessage());
                     // Keep skills as empty list
                 }
             }
@@ -131,8 +147,6 @@ public class ApplicationServiceImpl implements ApplicationService {
                     application.getStatus().name(),
                     application.getResumePath());
         } catch (Exception e) {
-            System.err.println("Error mapping application response: " + e.getMessage());
-            e.printStackTrace();
             throw new RuntimeException("Error processing application data", e);
         }
     }

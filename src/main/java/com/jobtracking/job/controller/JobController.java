@@ -37,7 +37,6 @@ public class JobController {
             try {
                 return Long.parseLong((String) principal);
             } catch (NumberFormatException e) {
-                System.err.println("Error parsing userId from principal: " + principal);
                 return null;
             }
         }
@@ -69,7 +68,6 @@ public class JobController {
                     .body(new ApiResponse<>(true, "Job created successfully", savedJob));
                     
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(false, "Error creating job: " + e.getMessage(), null));
         }

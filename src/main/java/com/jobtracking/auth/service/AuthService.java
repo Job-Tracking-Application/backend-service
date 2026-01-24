@@ -3,6 +3,7 @@ package com.jobtracking.auth.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.jobtracking.audit.service.AuditLogService;
 import com.jobtracking.auth.dto.LoginRequest;
 import com.jobtracking.auth.dto.LoginResponse;
 import com.jobtracking.auth.dto.RegisterRequest;
@@ -18,14 +19,18 @@ public class AuthService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtUtil jwtUtil;
+	private final AuditLogService auditLogService;
 
 	public void register(RegisterRequest request) {
 		if (userRepository.existsByEmail(request.getEmail())) {
 			throw new RuntimeException("Email already exists");
 		}
 
+		// Auto-generate username from email
+		String autoUsername = generateUsernameFromEmail(request.getEmail());
+
 		User user = User.builder()
-				.username(request.getUsername())
+				.username(autoUsername)
 				.email(request.getEmail())
 				.passwordHash(passwordEncoder.encode(request.getPassword()))
 				.roleId(request.getRoleId())
@@ -34,6 +39,27 @@ public class AuthService {
 				.build();
 
 		userRepository.save(user);
+		
+		// Log user registration
+		auditLogService.log("USER", user.getId(), "REGISTERED", user.getId());
+	}
+
+	private String generateUsernameFromEmail(String email) {
+		// Extract username part from email (before @)
+		String baseUsername = email.substring(0, email.indexOf('@'));
+		
+		// Clean up the username (remove dots, special chars)
+		baseUsername = baseUsername.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+		
+		// Ensure uniqueness by checking database
+		String username = baseUsername;
+		int counter = 1;
+		while (userRepository.existsByUsername(username)) {
+			username = baseUsername + counter;
+			counter++;
+		}
+		
+		return username;
 	}
 
 	public LoginResponse login(LoginRequest request) {
@@ -46,6 +72,9 @@ public class AuthService {
 		}
 
 		String token = jwtUtil.generateToken(user.getId(), user.getRoleId());
+
+		// Log successful login
+		auditLogService.log("USER", user.getId(), "LOGIN", user.getId());
 
 		return new LoginResponse(token, user.getId(), user.getRoleId(), user.getFullname(), user.getEmail());
 	}

@@ -19,6 +19,12 @@ import java.util.List;
 import org.springframework.web.bind.annotation.PostMapping;
 import com.jobtracking.application.dto.ApplyJobRequest;
 
+import jakarta.validation.Valid;
+
+/**
+ * Controller for managing job applications
+ * Handles application creation, status updates, and retrieval
+ */
 @RestController
 @RequestMapping("/applications")
 @RequiredArgsConstructor
@@ -77,7 +83,7 @@ public class ApplicationController {
 
     @PatchMapping("/manage/{id}")
     public ResponseEntity<?> updateApplication(@PathVariable Long id,
-            @RequestBody UpdateStatusRequest updateStatusRequest) {
+            @Valid @RequestBody UpdateStatusRequest updateStatusRequest) {
     	 try {
     	        ApplicationResponse response =
     	                applicationService.updateApplication(id, updateStatusRequest);
@@ -86,7 +92,11 @@ public class ApplicationController {
     	    } catch (RuntimeException ex) {
     	        return ResponseEntity
     	                .status(HttpStatus.NOT_FOUND)
-    	                .body(ex.getMessage());
+    	                .body("Application not found with ID: " + id);
+    	    } catch (Exception ex) {
+    	        return ResponseEntity
+    	                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+    	                .body("Internal server error: " + ex.getMessage());
     	    }
     }
 

@@ -1,5 +1,7 @@
 package com.jobtracking.config;
 
+import java.util.List;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -95,6 +97,13 @@ public class DataInitializer implements CommandLineRunner {
 
     private void createTestData() {
         try {
+            // Get the actual recruiter user ID
+            User recruiterUser = userRepository.findByEmail("chaitanya@gmail.com").orElse(null);
+            if (recruiterUser == null) {
+                return; // Can't create companies without recruiter
+            }
+            Long actualRecruiterId = recruiterUser.getId();
+            
             // Create test companies
             if (organizationRepository.count() == 0) {
                 Organization techSoft = new Organization();
@@ -104,7 +113,7 @@ public class DataInitializer implements CommandLineRunner {
                 techSoft.setContactEmail("hr@techsoft.com");
                 techSoft.setDescription("Leading software development company");
                 techSoft.setVerified(true);
-                techSoft.setRecruiterUserId(2L); // Recruiter user ID
+                techSoft.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
                 organizationRepository.save(techSoft);
 
                 Organization dataWorks = new Organization();
@@ -114,7 +123,7 @@ public class DataInitializer implements CommandLineRunner {
                 dataWorks.setContactEmail("careers@dataworks.com");
                 dataWorks.setDescription("Data analytics and AI solutions");
                 dataWorks.setVerified(true);
-                dataWorks.setRecruiterUserId(2L); // Recruiter user ID
+                dataWorks.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
                 organizationRepository.save(dataWorks);
             }
 
@@ -128,7 +137,7 @@ public class DataInitializer implements CommandLineRunner {
                 job1.setLocation("Bangalore");
                 job1.setJobType("Full-time");
                 job1.setCompanyId(1L); // TechSoft company ID
-                job1.setRecruiterUserId(2L); // Recruiter user ID
+                job1.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
                 job1.setIsActive(true);
                 jobRepository.save(job1);
 
@@ -140,7 +149,7 @@ public class DataInitializer implements CommandLineRunner {
                 job2.setLocation("Mumbai");
                 job2.setJobType("Full-time");
                 job2.setCompanyId(2L); // DataWorks company ID
-                job2.setRecruiterUserId(2L); // Recruiter user ID
+                job2.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
                 job2.setIsActive(true);
                 jobRepository.save(job2);
 
@@ -152,7 +161,7 @@ public class DataInitializer implements CommandLineRunner {
                 job3.setLocation("Mumbai");
                 job3.setJobType("Full-time");
                 job3.setCompanyId(2L); // DataWorks company ID
-                job3.setRecruiterUserId(2L); // Recruiter user ID
+                job3.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
                 job3.setIsActive(true);
                 jobRepository.save(job3);
 
@@ -164,7 +173,7 @@ public class DataInitializer implements CommandLineRunner {
                 job4.setLocation("Bangalore");
                 job4.setJobType("Full-time");
                 job4.setCompanyId(1L); // TechSoft company ID
-                job4.setRecruiterUserId(2L); // Recruiter user ID
+                job4.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
                 job4.setIsActive(true);
                 jobRepository.save(job4);
 
@@ -176,7 +185,7 @@ public class DataInitializer implements CommandLineRunner {
                 job5.setLocation("Mumbai");
                 job5.setJobType("Full-time");
                 job5.setCompanyId(2L); // DataWorks company ID
-                job5.setRecruiterUserId(2L); // Recruiter user ID
+                job5.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
                 job5.setIsActive(true);
                 jobRepository.save(job5);
             }
@@ -197,72 +206,79 @@ public class DataInitializer implements CommandLineRunner {
                     JobSeekerProfile newProfile = new JobSeekerProfile();
                     newProfile.setUser(jobSeeker);
                     newProfile.setBioEn("Experienced software developer with passion for creating innovative solutions");
-                    newProfile.setEducation("Bachelor's in Computer Science");
-                    newProfile.setResumeLink("https://drive.google.com/file/d/demo-resume-link");
+                    newProfile.setEducation("{\"degree\":\"Bachelor's in Computer Science\",\"college\":\"Tech University\",\"year\":2020}");
+                    newProfile.setResumeLink("https://example.com/resume-link");
                     return jobSeekerProfileRepository.save(newProfile);
                 });
 
-            // Always create demo skills (check if skills exist first)
-            createDemoSkills(profile);
+            // Update existing profile if education is not in JSON format
+            if (profile.getEducation() != null && !profile.getEducation().startsWith("{")) {
+                profile.setBioEn("Experienced software developer with passion for creating innovative solutions");
+                profile.setEducation("{\"degree\":\"Bachelor's in Computer Science\",\"college\":\"Tech University\",\"year\":2020}");
+                profile.setResumeLink("https://example.com/resume-link");
+                jobSeekerProfileRepository.save(profile);
+            }
+
+            // Always create initial skills (check if skills exist first)
+            createInitialSkills(profile);
 
             // Create applications only if none exist
             if (applicationRepository.count() == 0) {
-                // Get jobs to apply for
-                Job job1 = jobRepository.findById(1L).orElse(null);
-                Job job2 = jobRepository.findById(2L).orElse(null);
-                Job job3 = jobRepository.findById(3L).orElse(null);
+                // Get jobs to apply for (use findById to get actual jobs from DB)
+                List<Job> allJobs = jobRepository.findAll();
+                if (allJobs.size() >= 3) {
+                    Job job1 = allJobs.get(0);
+                    Job job2 = allJobs.get(1);
+                    Job job3 = allJobs.get(2);
 
-                // Create applications
-                if (job1 != null) {
-                    Application app1 = new Application();
-                    app1.setUser(jobSeeker);
-                    app1.setJob(job1);
-                    app1.setStatus(ApplicationStatus.APPLIED);
-                    app1.setResumePath("https://drive.google.com/file/d/demo-resume-link");
-                    app1.setCoverLetter("I am very interested in this Java Developer position and believe my skills align well with your requirements.");
-                    applicationRepository.save(app1);
-                }
+                    // Create applications
+                    if (job1 != null) {
+                        Application app1 = new Application();
+                        app1.setUser(jobSeeker);
+                        app1.setJob(job1);
+                        app1.setStatus(ApplicationStatus.APPLIED);
+                        app1.setResumePath("https://example.com/resume-link");
+                        app1.setCoverLetter("I am very interested in this Java Developer position and believe my skills align well with your requirements.");
+                        applicationRepository.save(app1);
+                    }
 
-                if (job2 != null) {
-                    Application app2 = new Application();
-                    app2.setUser(jobSeeker);
-                    app2.setJob(job2);
-                    app2.setStatus(ApplicationStatus.SHORTLISTED);
-                    app2.setResumePath("https://drive.google.com/file/d/demo-resume-link");
-                    app2.setCoverLetter("I have extensive experience with React and would love to contribute to your frontend team.");
-                    applicationRepository.save(app2);
-                }
+                    if (job2 != null) {
+                        Application app2 = new Application();
+                        app2.setUser(jobSeeker);
+                        app2.setJob(job2);
+                        app2.setStatus(ApplicationStatus.SHORTLISTED);
+                        app2.setResumePath("https://example.com/resume-link");
+                        app2.setCoverLetter("I have extensive experience with React and would love to contribute to your frontend team.");
+                        applicationRepository.save(app2);
+                    }
 
-                if (job3 != null) {
-                    Application app3 = new Application();
-                    app3.setUser(jobSeeker);
-                    app3.setJob(job3);
-                    app3.setStatus(ApplicationStatus.APPLIED);
-                    app3.setResumePath("https://drive.google.com/file/d/demo-resume-link");
-                    app3.setCoverLetter("My analytical skills and experience with data visualization make me a great fit for this role.");
-                    applicationRepository.save(app3);
+                    if (job3 != null) {
+                        Application app3 = new Application();
+                        app3.setUser(jobSeeker);
+                        app3.setJob(job3);
+                        app3.setStatus(ApplicationStatus.APPLIED);
+                        app3.setResumePath("https://example.com/resume-link");
+                        app3.setCoverLetter("My analytical skills and experience with data visualization make me a great fit for this role.");
+                        applicationRepository.save(app3);
+                    }
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error creating test applications: " + e.getMessage());
-            e.printStackTrace();
+            // Error creating test applications - continue silently
         }
     }
 
-    private void createDemoSkills(JobSeekerProfile profile) {
+    private void createInitialSkills(JobSeekerProfile profile) {
         try {
             // Check if skills already exist for this profile
             if (jobSeekerSkillsRepository.findByJobSeekerProfile(profile).isEmpty()) {
                 String[] skillNames = {"Java", "Spring Boot", "React", "JavaScript", "MySQL", "Git", "REST APIs", "HTML/CSS"};
-                
-                System.out.println("Creating demo skills for profile ID: " + profile.getId());
                 
                 for (String skillName : skillNames) {
                     try {
                         // Create or get skill
                         Skill skill = skillRepository.findByName(skillName)
                             .orElseGet(() -> {
-                                System.out.println("Creating new skill: " + skillName);
                                 Skill newSkill = new Skill();
                                 newSkill.setName(skillName);
                                 return skillRepository.save(newSkill);
@@ -275,19 +291,14 @@ public class DataInitializer implements CommandLineRunner {
                         jobSeekerSkill.setProficiency(Proficiency.INTERMEDIATE); // Default proficiency
                         jobSeekerSkillsRepository.save(jobSeekerSkill);
                         
-                        System.out.println("Created skill association: " + skillName + " for profile " + profile.getId());
                     } catch (Exception e) {
-                        System.err.println("Error creating skill " + skillName + ": " + e.getMessage());
+                        // Error creating individual skill - continue with others
                     }
                 }
                 
-                System.out.println("Finished creating demo skills");
-            } else {
-                System.out.println("Skills already exist for profile ID: " + profile.getId());
             }
         } catch (Exception e) {
-            System.err.println("Error in createDemoSkills: " + e.getMessage());
-            e.printStackTrace();
+            // Error in createInitialSkills - continue silently
         }
     }
 }

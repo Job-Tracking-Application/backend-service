@@ -37,7 +37,6 @@ public class DashboardController {
             try {
                 return Long.parseLong((String) principal);
             } catch (NumberFormatException e) {
-                System.err.println("Error parsing userId from principal: " + principal);
                 return null;
             }
         }
@@ -51,18 +50,13 @@ public class DashboardController {
         try {
             Long recruiterId = getCurrentUserId();
             if (recruiterId == null) {
-                System.err.println("Dashboard: User not authenticated");
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse<>(false, "User not authenticated", null));
             }
             
-            System.out.println("Dashboard: Getting stats for recruiter ID: " + recruiterId);
             DashboardStatsResponse stats = dashboardService.getRecruiterStats(recruiterId);
-            System.out.println("Dashboard: Stats retrieved successfully: " + stats);
             return ResponseEntity.ok(new ApiResponse<>(true, "Recruiter stats retrieved successfully", stats));
         } catch (Exception e) {
-            System.err.println("Dashboard: Error in getRecruiterStats: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError()
                     .body(new ApiResponse<>(false, "Error retrieving recruiter stats: " + e.getMessage(), null));
         }
