@@ -26,7 +26,7 @@ public class ProfileController {
 	public ResponseEntity<?> getProfile(Authentication authentication) {
 
 		try {
-			Long userId = Long.valueOf(authentication.getPrincipal().toString());
+			Long userId = Long.valueOf(authentication.getName());
 			ProfileResponse profile = profileService.getJobSeekerProfile(userId);
 			return ResponseEntity.ok(profile);
 
@@ -51,7 +51,7 @@ public class ProfileController {
 			@RequestBody UpdateProfileRequest request) {
 
 		try {
-			Long userId = Long.valueOf(authentication.getPrincipal().toString());
+			Long userId = Long.valueOf(authentication.getName());
 			profileService.updateJobSeekerProfile(userId, request);
 			return ResponseEntity.ok("Profile updated successfully");
 
@@ -73,7 +73,7 @@ public class ProfileController {
 	@PostMapping("/jobseeker/create-demo-skills")
 	public ResponseEntity<?> createDemoSkills(Authentication authentication) {
 		try {
-			Long userId = Long.valueOf(authentication.getPrincipal().toString());
+			Long userId = Long.valueOf(authentication.getName());
 			profileService.createDemoSkillsForUser(userId);
 			return ResponseEntity.ok("Demo skills created successfully");
 		} catch (Exception ex) {
@@ -87,7 +87,7 @@ public class ProfileController {
 	@GetMapping("/jobseeker/debug")
 	public ResponseEntity<?> debugProfile(Authentication authentication) {
 		try {
-			Long userId = Long.valueOf(authentication.getPrincipal().toString());
+			Long userId = Long.valueOf(authentication.getName());
 			ProfileResponse profile = profileService.getJobSeekerProfile(userId);
 			
 			// Return detailed debug info

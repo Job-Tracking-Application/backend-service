@@ -9,5 +9,5 @@ public record UpdateProfileRequest(
                 List<String> skills,
                 String resume,
                 String about,
-                String education) {
+                EducationDTO education) {
 }

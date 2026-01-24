@@ -29,9 +29,8 @@ public class ApplicationController {
     public ResponseEntity<String> createApplication(@PathVariable Long jobId,
             @RequestBody ApplyJobRequest applyJobRequest, Authentication authentication) {
         try {
-            Long userId = Long.valueOf(authentication.getPrincipal().toString());
-            applicationService.createApplication(jobId, userId,
-                    applyJobRequest); 
+            Long userId = Long.valueOf(authentication.getName());
+            applicationService.createApplication(jobId, userId, applyJobRequest); 
             return ResponseEntity.ok("Job applied successfully");
         } catch (IllegalStateException ex) {
             // duplicate application
@@ -45,24 +44,10 @@ public class ApplicationController {
         }
     }
 
-    @GetMapping("/my")
+    @GetMapping("/me")
     public ResponseEntity<?> getMyApplications(Authentication authentication) {
         try {
-            Long userId = Long.valueOf(authentication.getPrincipal().toString());
-            return ResponseEntity.ok(
-                    applicationService.getCandidateApplication(userId)
-            );
-        } catch (Exception ex) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Unable to fetch applications");
-        }
-    }
-
-    @GetMapping("/me")
-    public ResponseEntity<?> getMyApplicationsAlias(Authentication authentication) {
-        try {
-            Long userId = Long.valueOf(authentication.getPrincipal().toString());
+            Long userId = Long.valueOf(authentication.getName());
             return ResponseEntity.ok(
                     applicationService.getCandidateApplication(userId)
             );
@@ -108,7 +93,7 @@ public class ApplicationController {
     @GetMapping("/check/{jobId}")
     public ResponseEntity<?> checkApplicationExists(@PathVariable Long jobId, Authentication authentication) {
         try {
-            Long userId = Long.valueOf(authentication.getPrincipal().toString());
+            Long userId = Long.valueOf(authentication.getName());
             boolean hasApplied = applicationService.hasUserAppliedForJob(jobId, userId);
             return ResponseEntity.ok(java.util.Map.of("hasApplied", hasApplied));
         } catch (Exception ex) {
@@ -117,6 +102,4 @@ public class ApplicationController {
                     .body("Unable to check application status");
         }
     }
-   
-
 }

@@ -8,17 +8,14 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString
-public class ProfileResponse {
-    private String fullName;
-    private String email;
-    private String userName;
-    private List<String> skills;
-    private String resume;
-    private String about;
-    private String education;
+
+public record ProfileResponse(   
+		String fullName,
+     String email,
+     String userName,
+    List<String> skills,
+    String resume,
+    String about,
+    EducationDTO education) {
+ 
 }
