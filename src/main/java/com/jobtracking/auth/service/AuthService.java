@@ -25,16 +25,18 @@ public class AuthService {
 		if (userRepository.existsByEmail(request.getEmail())) {
 			throw new RuntimeException("Email already exists");
 		}
-
-		// Auto-generate username from email
-		String autoUsername = generateUsernameFromEmail(request.getEmail());
+		
+		if (userRepository.existsByUsername(request.getUsername())) {
+			throw new RuntimeException("Username already exists");
+		}
 
 		User user = User.builder()
-				.username(autoUsername)
+				.username(request.getUsername())
 				.email(request.getEmail())
 				.passwordHash(passwordEncoder.encode(request.getPassword()))
 				.roleId(request.getRoleId())
 				.fullname(request.getFullname())
+				.phone(request.getPhone())
 				.active(true)
 				.build();
 
@@ -42,24 +44,6 @@ public class AuthService {
 		
 		// Log user registration
 		auditLogService.log("USER", user.getId(), "REGISTERED", user.getId());
-	}
-
-	private String generateUsernameFromEmail(String email) {
-		// Extract username part from email (before @)
-		String baseUsername = email.substring(0, email.indexOf('@'));
-		
-		// Clean up the username (remove dots, special chars)
-		baseUsername = baseUsername.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
-		
-		// Ensure uniqueness by checking database
-		String username = baseUsername;
-		int counter = 1;
-		while (userRepository.existsByUsername(username)) {
-			username = baseUsername + counter;
-			counter++;
-		}
-		
-		return username;
 	}
 
 	public LoginResponse login(LoginRequest request) {

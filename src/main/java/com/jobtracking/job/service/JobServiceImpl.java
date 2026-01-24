@@ -12,7 +12,6 @@ import com.jobtracking.job.entity.JobSkill;
 import com.jobtracking.job.entity.JobSkillId;
 import com.jobtracking.job.repository.JobRepository;
 import com.jobtracking.job.repository.JobSkillRepository;
-import com.jobtracking.job.service.JobService;
 
 import lombok.RequiredArgsConstructor;
 

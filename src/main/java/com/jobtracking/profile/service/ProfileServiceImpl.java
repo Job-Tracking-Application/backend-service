@@ -111,14 +111,41 @@ public class ProfileServiceImpl implements ProfileService {
 			if (req.education().trim().startsWith("{")) {
 				profile.setEducation(req.education());
 			} else {
-				// Convert plain text to JSON format
+				// For plain text education, try to parse it intelligently
+				String educationText = req.education().trim();
+				
+				// Try to extract year from parentheses at the end
+				String degree = educationText;
+				String college = "";
+				int year = 0;
+				
+				// Look for year in parentheses like "(2020)"
+				if (educationText.matches(".*\\(\\d{4}\\).*")) {
+					java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(".*\\((\\d{4})\\)");
+					java.util.regex.Matcher matcher = pattern.matcher(educationText);
+					if (matcher.find()) {
+						year = Integer.parseInt(matcher.group(1));
+						// Remove the year part from the degree
+						degree = educationText.replaceAll("\\s*\\(\\d{4}\\)", "").trim();
+					}
+				}
+				
+				// Try to extract college using "from" keyword
+				if (degree.toLowerCase().contains(" from ")) {
+					String[] parts = degree.split("(?i)\\s+from\\s+", 2);
+					if (parts.length == 2) {
+						degree = parts[0].trim();
+						college = parts[1].trim();
+					}
+				}
+				
 				try {
 					ObjectMapper mapper = new ObjectMapper();
-					EducationDTO educationDTO = new EducationDTO(req.education(), "", 0);
+					EducationDTO educationDTO = new EducationDTO(degree, college, year);
 					profile.setEducation(mapper.writeValueAsString(educationDTO));
 				} catch (Exception e) {
-					// Fallback: store as plain text
-					profile.setEducation(req.education());
+					// Fallback: store as plain text in a simple JSON structure
+					profile.setEducation("{\"degree\":\"" + req.education().replace("\"", "\\\"") + "\",\"college\":\"\",\"year\":0}");
 				}
 			}
 		}
