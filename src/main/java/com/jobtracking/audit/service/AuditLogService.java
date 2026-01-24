@@ -60,6 +60,6 @@ public class AuditLogService {
 	}
 
 	public List<AuditLog> findAll() {
-		return repo.findAll();
+		return repo.findAllByOrderByPerformedAtDesc();
 	}
 }

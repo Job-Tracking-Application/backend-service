@@ -7,17 +7,26 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jobtracking.report.service.ReportService;
+
 @RestController
-@RequestMapping("/api/admin/reports")
+@RequestMapping("/admin/reports")
 @PreAuthorize("hasRole('ADMIN')")
 public class ReportController {
+	
+	private final ReportService reportService;
+	
+	public ReportController(ReportService reportService) {
+		this.reportService = reportService;
+	}
+
 	@GetMapping("/summary")
 	public Map<String, Object> summary() {
-		return Map.of("message", "Summary report placeholder", "status", "COMING_SOON");
+		return reportService.getSummaryReport();
 	}
 
 	@GetMapping("/matrix")
 	public Map<String, Object> matrix() {
-		return Map.of("message", "Matrix report placeholder", "status", "COMING_SOON");
+		return reportService.getMatrixReport();
 	}
 }
