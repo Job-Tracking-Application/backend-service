@@ -6,6 +6,7 @@ public record UpdateProfileRequest(
                 String fullName,
                 String email,
                 String userName,
+                String phone,
                 List<String> skills,
                 String resume,
                 String about,

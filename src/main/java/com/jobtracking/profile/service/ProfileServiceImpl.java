@@ -66,6 +66,7 @@ public class ProfileServiceImpl implements ProfileService {
 				user.getFullname(),
 				user.getEmail(),
 				user.getUsername(),
+				user.getPhone(),
 				skills,
 				profile.getResumeLink(),
 				profile.getBioEn(),
@@ -81,6 +82,7 @@ public class ProfileServiceImpl implements ProfileService {
 
 		user.setFullname(req.fullName());
 		user.setUsername(req.userName());
+		user.setPhone(req.phone());
 		userRepo.save(user);
 
 		// 2️⃣ Fetch or create profile
@@ -142,6 +144,7 @@ public class ProfileServiceImpl implements ProfileService {
 				user.getFullname(),
 				user.getEmail(),
 				user.getUsername(),
+				user.getPhone(),
 				profile.getCompany().getName(),
 				profile.getCompanyDesc(),
 				profile.isVerified());
@@ -154,6 +157,7 @@ public class ProfileServiceImpl implements ProfileService {
 				.orElseThrow(() -> new RuntimeException("User not found"));
 		user.setFullname(request.fullName());
 		user.setUsername(request.userName());
+		user.setPhone(request.phone());
 		userRepo.save(user);
 		// Fetch recruiter profile
 		RecruiterProfile profile = recruiterProfileRepo.findByUserId(userId)
