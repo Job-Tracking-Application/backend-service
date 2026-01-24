@@ -9,4 +9,6 @@ public interface ProfileService{
 	ProfileResponse getJobSeekerProfile(Long id);
 
 	void updateJobSeekerProfile(Long userId, UpdateProfileRequest request);
+	
+	void createDemoSkillsForUser(Long userId);
 }

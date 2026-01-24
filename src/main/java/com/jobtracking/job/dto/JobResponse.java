@@ -24,6 +24,7 @@ public class JobResponse {
     private String jobType;
 
     private Long companyId;
+    private String companyName;
     private Long recruiterUserId;
 
     private Boolean isActive;

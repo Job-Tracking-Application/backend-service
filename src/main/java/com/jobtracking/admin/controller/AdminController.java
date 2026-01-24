@@ -39,7 +39,25 @@ public class AdminController {
 
 	private Long getCurrentUserId() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		return auth != null ? (Long) auth.getPrincipal() : null;
+		
+		if (auth == null || !auth.isAuthenticated()) {
+			return null;
+		}
+
+		// The principal is the userId (String) set in JwtAuthenticationFilter
+		Object principal = auth.getPrincipal();
+		if (principal instanceof Long) {
+			return (Long) principal;
+		} else if (principal instanceof String) {
+			try {
+				return Long.parseLong((String) principal);
+			} catch (NumberFormatException e) {
+				System.err.println("Error parsing userId from principal: " + principal);
+				return null;
+			}
+		}
+
+		return null;
 	}
 
 	@GetMapping("/stats")
@@ -93,7 +111,7 @@ public class AdminController {
 		adminService.verifyCompany(id, verified, getCurrentUserId());
 	}
 
-	// ✅ List all applications with pagination and filtering
+	// List all applications with pagination and filtering
 	@GetMapping("/applications")
 	public ResponseEntity<Page<AdminApplicationResponse>> getApplications(
 			@RequestParam(defaultValue = "0") int page,
@@ -104,13 +122,13 @@ public class AdminController {
 				adminService.getAllApplications(page, size, status));
 	}
 
-	// ✅ View single application
+	// View single application
 	@GetMapping("/applications/{id}")
 	public ResponseEntity<AdminApplicationResponse> getApplication(@PathVariable Long id) {
 		return ResponseEntity.ok(adminService.getApplication(id));
 	}
 
-	// ✅ Delete abusive application
+	// Delete abusive application
 	@DeleteMapping("/applications/{id}")
 	public ResponseEntity<String> deleteApplication(@PathVariable Long id) {
 		adminService.deleteApplication(id, getCurrentUserId());

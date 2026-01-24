@@ -18,6 +18,7 @@ import com.jobtracking.admin.dto.AdminJobResponse;
 import com.jobtracking.admin.dto.AdminStatsResponse;
 import com.jobtracking.admin.dto.AdminUserResponse;
 import com.jobtracking.application.entity.Application;
+import com.jobtracking.application.enums.ApplicationStatus;
 import com.jobtracking.application.repository.ApplicationRepository;
 import com.jobtracking.audit.service.AuditLogService;
 import com.jobtracking.auth.entity.User;
@@ -142,7 +143,17 @@ public class AdminService {
 	public Page<AdminApplicationResponse> getAllApplications(int page, int size, String status) {
 		Pageable pageable = PageRequest.of(page, size, Sort.by("appliedAt").descending());
 		
-		Page<Application> applications = appRepo.filterApplications(status, pageable);
+		// Convert string status to enum if provided
+		ApplicationStatus statusEnum = null;
+		if (status != null && !status.isEmpty()) {
+			try {
+				statusEnum = ApplicationStatus.valueOf(status.toUpperCase());
+			} catch (IllegalArgumentException e) {
+				// Invalid status, will return empty results
+			}
+		}
+		
+		Page<Application> applications = appRepo.filterApplications(statusEnum, pageable);
 		
 		final Map<Long, String> jobTitles = jobRepo.findAll().stream().collect(
 				Collectors.toMap(Job::getId, Job::getTitle));
@@ -151,11 +162,11 @@ public class AdminService {
 
 		return applications.map(a -> new AdminApplicationResponse(
 				a.getId(),
-				a.getJobId(),
-				jobTitles.getOrDefault(a.getJobId(), "Unknown Job"),
-				a.getJobSeekerUserId(),
-				userNames.getOrDefault(a.getJobSeekerUserId(), "Unknown User"),
-				a.getStatus(),
+				a.getJob().getId(),
+				jobTitles.getOrDefault(a.getJob().getId(), "Unknown Job"),
+				a.getUser().getId(),
+				userNames.getOrDefault(a.getUser().getId(), "Unknown User"),
+				a.getStatus().name(),
 				a.getAppliedAt(),
 				a.getUpdatedAt(),
 				a.getResumePath()));
@@ -172,11 +183,11 @@ public class AdminService {
 
 		return new AdminApplicationResponse(
 				application.getId(),
-				application.getJobId(),
-				jobTitles.getOrDefault(application.getJobId(), "Unknown Job"),
-				application.getJobSeekerUserId(),
-				userNames.getOrDefault(application.getJobSeekerUserId(), "Unknown User"),
-				application.getStatus(),
+				application.getJob().getId(),
+				jobTitles.getOrDefault(application.getJob().getId(), "Unknown Job"),
+				application.getUser().getId(),
+				userNames.getOrDefault(application.getUser().getId(), "Unknown User"),
+				application.getStatus().name(),
 				application.getAppliedAt(),
 				application.getUpdatedAt(),
 				application.getResumePath());

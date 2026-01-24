@@ -20,19 +20,45 @@ public class DashboardService {
 
     public DashboardStatsResponse getRecruiterStats(Long recruiterId) {
         try {
+            System.out.println("DashboardService: Getting stats for recruiter ID: " + recruiterId);
+            
             // Count active jobs for this recruiter (excluding soft-deleted)
-            long activeJobs = jobRepository.countByRecruiterUserIdAndIsActiveTrueAndDeletedAtIsNull(recruiterId);
+            long activeJobs = 0;
+            try {
+                activeJobs = jobRepository.countByRecruiterUserIdAndIsActiveTrueAndDeletedAtIsNull(recruiterId);
+                System.out.println("DashboardService: Active jobs count: " + activeJobs);
+            } catch (Exception e) {
+                System.err.println("Error counting active jobs: " + e.getMessage());
+                e.printStackTrace();
+            }
             
             // Count pending applications for recruiter's jobs
-            long pendingApplications = applicationRepository.countPendingApplicationsForRecruiter(recruiterId);
+            long pendingApplications = 0;
+            try {
+                pendingApplications = applicationRepository.countApplicationsForRecruiterByStatus(recruiterId, ApplicationStatus.APPLIED);
+                System.out.println("DashboardService: Pending applications count: " + pendingApplications);
+            } catch (Exception e) {
+                System.err.println("Error counting pending applications: " + e.getMessage());
+                e.printStackTrace();
+            }
             
             // Count hired candidates for recruiter's jobs
-            long hiredCandidates = applicationRepository.countHiredApplicationsForRecruiter(recruiterId);
+            long hiredCandidates = 0;
+            try {
+                hiredCandidates = applicationRepository.countApplicationsForRecruiterByStatus(recruiterId, ApplicationStatus.HIRED);
+                System.out.println("DashboardService: Hired candidates count: " + hiredCandidates);
+            } catch (Exception e) {
+                System.err.println("Error counting hired candidates: " + e.getMessage());
+                e.printStackTrace();
+            }
             
-            return new DashboardStatsResponse(activeJobs, pendingApplications, hiredCandidates);
+            DashboardStatsResponse response = new DashboardStatsResponse(activeJobs, pendingApplications, hiredCandidates);
+            System.out.println("DashboardService: Returning response: " + response);
+            return response;
         } catch (Exception e) {
             // Return zero stats if there's an error
             System.err.println("Error calculating recruiter stats: " + e.getMessage());
+            e.printStackTrace();
             return new DashboardStatsResponse(0L, 0L, 0L);
         }
     }

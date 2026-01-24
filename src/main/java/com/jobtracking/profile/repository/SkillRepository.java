@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.jobtracking.auth.entity.User;
 import com.jobtracking.profile.entity.Skill;
 
 public interface SkillRepository extends JpaRepository<Skill,Long> {

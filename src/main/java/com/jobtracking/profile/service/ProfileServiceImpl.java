@@ -1,7 +1,5 @@
 package com.jobtracking.profile.service;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 
 import com.jobtracking.auth.entity.User;
@@ -30,23 +28,46 @@ public class ProfileServiceImpl implements ProfileService {
 
 	public ProfileResponse getJobSeekerProfile(Long id) {
 		User user = userRepo.findById(id).orElseThrow(() -> new RuntimeException("user Not found"));
+		
+		// Get or create profile if it doesn't exist
 		JobSeekerProfile profile = jobSeekerProfileRepo.findByUserId(id)
-				.orElseThrow(() -> new RuntimeException("Profile Not found"));
+				.orElseGet(() -> {
+					// Create a new profile if it doesn't exist
+					JobSeekerProfile newProfile = new JobSeekerProfile();
+					newProfile.setUser(user);
+					return jobSeekerProfileRepo.save(newProfile);
+				});
+		
 		ProfileResponse dto = new ProfileResponse();
 		dto.setFullName(user.getFullname());
 		dto.setEmail(user.getEmail());
 		dto.setUserName(user.getUsername());
-		dto.setSkills(jobSeekerSkills.findByJobSeekerProfile(profile).stream()
-				.map(jsSkill -> jsSkill.getSkill().getName()).toList());
+		
+		// Fetch skills with error handling
+		try {
+			dto.setSkills(jobSeekerSkills.findByJobSeekerProfile(profile).stream()
+					.map(jsSkill -> jsSkill.getSkill().getName()).toList());
+		} catch (Exception e) {
+			System.err.println("Error fetching skills for user " + id + ": " + e.getMessage());
+			dto.setSkills(java.util.List.of()); // Set empty list on error
+		}
+		
 		dto.setResume(profile.getResumeLink());
 		dto.setAbout(profile.getBioEn());
 		dto.setEducation(profile.getEducation());
+		
+		// Debug: Log the profile data being returned
+		System.out.println("Profile data for user " + id + ":");
+		System.out.println("  Education: " + profile.getEducation());
+		System.out.println("  About: " + profile.getBioEn());
+		System.out.println("  Resume: " + profile.getResumeLink());
+		System.out.println("  Skills count: " + dto.getSkills().size());
+		
 		return dto;
 	}
 
 	@Override
 	public void updateJobSeekerProfile(Long userId, UpdateProfileRequest req) {
-		// TODO Auto-generated method stub
 		User user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("user Not found"));
 		user.setFullname(req.fullName());
 		user.setUsername(req.userName());
@@ -60,23 +81,66 @@ public class ProfileServiceImpl implements ProfileService {
 		profile.setBioEn(req.about());
 		profile.setEducation(req.education());
 		profile.setResumeLink(req.resume());
-		jobSeekerProfileRepo.save(profile);
+		
+		// Save profile first to ensure it has an ID
+		profile = jobSeekerProfileRepo.save(profile);
+		
+		// Delete existing skills and add new ones
 		jobSeekerSkills.deleteByJobSeekerProfileId(profile.getId());
+		
 		for (String skillName : req.skills()) {
-
-			Skill skill = skillRepo.findByName(skillName)
-					.orElseGet(() -> {
-						Skill s = new Skill();
-						s.setName(skillName);
-						return skillRepo.save(s);
-					});
-			JobSeekerSkill js = new JobSeekerSkill();
-			js.setJobSeekerProfile(profile);
-			js.setSkill(skill);
-			js.setProficiency(Proficiency.BEGINNER); // default
-			jobSeekerSkills.save(js);
+			if (skillName != null && !skillName.trim().isEmpty()) {
+				Skill skill = skillRepo.findByName(skillName.trim())
+						.orElseGet(() -> {
+							Skill s = new Skill();
+							s.setName(skillName.trim());
+							return skillRepo.save(s);
+						});
+				JobSeekerSkill js = new JobSeekerSkill();
+				js.setJobSeekerProfile(profile);
+				js.setSkill(skill);
+				js.setProficiency(Proficiency.INTERMEDIATE); // default
+				jobSeekerSkills.save(js);
+			}
 		}
+	}
 
+	@Override
+	public void createDemoSkillsForUser(Long userId) {
+		User user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+		
+		// Get or create profile
+		JobSeekerProfile profile = jobSeekerProfileRepo.findByUserId(userId)
+				.orElseGet(() -> {
+					JobSeekerProfile newProfile = new JobSeekerProfile();
+					newProfile.setUser(user);
+					newProfile.setBioEn("Experienced software developer with passion for creating innovative solutions");
+					newProfile.setEducation("Bachelor's in Computer Science");
+					newProfile.setResumeLink("https://drive.google.com/file/d/demo-resume-link");
+					return jobSeekerProfileRepo.save(newProfile);
+				});
+
+		// Clear existing skills first
+		jobSeekerSkills.deleteByJobSeekerProfileId(profile.getId());
+
+		// Create demo skills
+		String[] skillNames = {"Java", "Spring Boot", "React", "JavaScript", "MySQL", "Git", "REST APIs", "HTML/CSS"};
+		
+		for (String skillName : skillNames) {
+			if (skillName != null && !skillName.trim().isEmpty()) {
+				Skill skill = skillRepo.findByName(skillName.trim())
+						.orElseGet(() -> {
+							Skill s = new Skill();
+							s.setName(skillName.trim());
+							return skillRepo.save(s);
+						});
+				JobSeekerSkill js = new JobSeekerSkill();
+				js.setJobSeekerProfile(profile);
+				js.setSkill(skill);
+				js.setProficiency(Proficiency.INTERMEDIATE);
+				jobSeekerSkills.save(js);
+			}
+		}
 	}
 
 }

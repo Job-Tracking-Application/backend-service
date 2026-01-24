@@ -4,9 +4,9 @@ import java.time.LocalDate;
 
 public record CandidateApplicationResponse(
     Long id,
-    String JobTitle,
-    String Company,
-    String Status,
+    String jobTitle,
+    String company,
+    String status,
     LocalDate appliedDate,
     String resume    
 ) {  

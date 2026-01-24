@@ -37,11 +37,11 @@ public class JobSeekerProfile {
     @Column(name = "bio_mr", columnDefinition = "TEXT")
     private String bioMr;
     
-    // MySQL JSON fields stored as String
-    @Column(columnDefinition = "JSON")
+    // Education and experience as TEXT fields
+    @Column(columnDefinition = "TEXT")
     private String education;
 
-    @Column(columnDefinition = "JSON")
+    @Column(columnDefinition = "TEXT")
     private String experience;
   
     // 🔹 Foreign Key mapping

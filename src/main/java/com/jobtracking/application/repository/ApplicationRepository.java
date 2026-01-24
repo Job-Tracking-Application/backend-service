@@ -35,14 +35,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     @Query("""
         SELECT COUNT(a) FROM Application a 
         JOIN a.job j 
-        WHERE j.recruiterUserId = :recruiterId AND a.status = 'APPLIED'
+        WHERE j.recruiterUserId = :recruiterId AND a.status = :status
     """)
-    long countPendingApplicationsForRecruiter(@Param("recruiterId") Long recruiterId);
-    
-    @Query("""
-        SELECT COUNT(a) FROM Application a 
-        JOIN a.job j 
-        WHERE j.recruiterUserId = :recruiterId AND a.status = 'HIRED'
-    """)
-    long countHiredApplicationsForRecruiter(@Param("recruiterId") Long recruiterId);
+    long countApplicationsForRecruiterByStatus(@Param("recruiterId") Long recruiterId, @Param("status") ApplicationStatus status);
 }

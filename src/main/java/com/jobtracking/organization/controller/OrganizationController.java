@@ -54,10 +54,17 @@ public class OrganizationController {
             return null;
         }
 
-        // The principal is the userId (Long) set in JwtAuthenticationFilter
+        // The principal is the userId (String) set in JwtAuthenticationFilter
         Object principal = auth.getPrincipal();
         if (principal instanceof Long) {
             return (Long) principal;
+        } else if (principal instanceof String) {
+            try {
+                return Long.parseLong((String) principal);
+            } catch (NumberFormatException e) {
+                System.err.println("Error parsing userId from principal: " + principal);
+                return null;
+            }
         }
 
         return null;
@@ -81,31 +88,6 @@ public class OrganizationController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(false, "Error retrieving organizations", null));
         }
-    }
-
-    // ===================== TEST ENDPOINT =====================
-    @GetMapping("/test")
-    public ResponseEntity<ApiResponse<String>> testConnection() {
-        try {
-            long count = organizationRepository.count();
-            return ResponseEntity.ok(
-                    new ApiResponse<>(true,
-                            "Database connection working. Organizations count: " + count,
-                            "OK")
-            );
-        } catch (Exception e) {
-            log.error("Database test failed", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "Database error", null));
-        }
-    }
-
-    // ===================== TEST JOB ENDPOINT =====================
-    @GetMapping("/test-job-endpoint")
-    public ResponseEntity<ApiResponse<String>> testJobEndpoint() {
-        return ResponseEntity.ok(
-                new ApiResponse<>(true, "Job endpoint test from OrganizationController", "OK")
-        );
     }
 
     // ===================== GET BY ID =====================

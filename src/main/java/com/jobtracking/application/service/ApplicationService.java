@@ -15,4 +15,6 @@ public interface ApplicationService {
     ApplicationResponse updateApplication(Long id, UpdateStatusRequest updateStatusRequest);
 
     void createApplication(Long jobId, Long userId, ApplyJobRequest application);
+    
+    boolean hasUserAppliedForJob(Long jobId, Long userId);
 }

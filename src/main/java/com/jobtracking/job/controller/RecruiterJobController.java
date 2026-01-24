@@ -29,9 +29,17 @@ public class RecruiterJobController {
             return null;
         }
 
+        // The principal is the userId (String) set in JwtAuthenticationFilter
         Object principal = auth.getPrincipal();
         if (principal instanceof Long) {
             return (Long) principal;
+        } else if (principal instanceof String) {
+            try {
+                return Long.parseLong((String) principal);
+            } catch (NumberFormatException e) {
+                System.err.println("Error parsing userId from principal: " + principal);
+                return null;
+            }
         }
 
         return null;

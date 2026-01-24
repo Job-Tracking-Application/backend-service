@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -65,6 +66,43 @@ public class ProfileController {
 					.status(HttpStatus.BAD_REQUEST)
 					.body(ex.getMessage());
 
+		}
+	}
+
+	// 🔹 TEST ENDPOINT - Create demo skills for current user
+	@PostMapping("/jobseeker/create-demo-skills")
+	public ResponseEntity<?> createDemoSkills(Authentication authentication) {
+		try {
+			Long userId = Long.valueOf(authentication.getPrincipal().toString());
+			profileService.createDemoSkillsForUser(userId);
+			return ResponseEntity.ok("Demo skills created successfully");
+		} catch (Exception ex) {
+			return ResponseEntity
+					.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Error creating demo skills: " + ex.getMessage());
+		}
+	}
+
+	// 🔹 DEBUG ENDPOINT - Get raw profile data
+	@GetMapping("/jobseeker/debug")
+	public ResponseEntity<?> debugProfile(Authentication authentication) {
+		try {
+			Long userId = Long.valueOf(authentication.getPrincipal().toString());
+			ProfileResponse profile = profileService.getJobSeekerProfile(userId);
+			
+			// Return detailed debug info
+			java.util.Map<String, Object> debugInfo = new java.util.HashMap<>();
+			debugInfo.put("userId", userId);
+			debugInfo.put("profile", profile);
+			debugInfo.put("educationValue", profile.getEducation());
+			debugInfo.put("educationIsNull", profile.getEducation() == null);
+			debugInfo.put("educationIsEmpty", profile.getEducation() != null && profile.getEducation().isEmpty());
+			
+			return ResponseEntity.ok(debugInfo);
+		} catch (Exception ex) {
+			return ResponseEntity
+					.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Debug error: " + ex.getMessage());
 		}
 	}
 }

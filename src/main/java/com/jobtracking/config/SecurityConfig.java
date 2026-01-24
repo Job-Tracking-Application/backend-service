@@ -35,17 +35,22 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/organizations", "/organizations/test").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/test-jobs/**").permitAll()
-                        .requestMatchers("/test-controller/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/organizations").permitAll()
                         .requestMatchers("/recruiter/jobs/**").hasRole("RECRUITER")
-                        .requestMatchers("/jobs/**").hasRole("RECRUITER")
+                        .requestMatchers(HttpMethod.GET, "/jobs/**").authenticated() // Allow all authenticated users to view jobs
+                        .requestMatchers("/jobs/**").hasRole("RECRUITER") // Only recruiters can create/update/delete jobs
                         .requestMatchers("/organizations/**").hasRole("RECRUITER")
                         .requestMatchers("/dashboard/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/applications/job/**").hasRole("RECRUITER")
                         .requestMatchers("/applications/manage/**").hasRole("RECRUITER")
                         .requestMatchers("/applications/me").hasRole("JOB_SEEKER")
+                        .requestMatchers("/applications/my").hasRole("JOB_SEEKER")
+                        .requestMatchers("/applications/check/**").hasRole("JOB_SEEKER")
+                        .requestMatchers(HttpMethod.POST, "/applications/**").hasRole("JOB_SEEKER") // Job seekers can apply for jobs
                         .requestMatchers("/profile/jobseeker").hasRole("JOB_SEEKER")
+                        .requestMatchers("/profile/jobseeker/create-demo-skills").hasRole("JOB_SEEKER")
+                        .requestMatchers("/profile/jobseeker/debug").hasRole("JOB_SEEKER")
                         .requestMatchers("/profile/**").authenticated()
                         .requestMatchers(
                                 "/v3/api-docs/**",

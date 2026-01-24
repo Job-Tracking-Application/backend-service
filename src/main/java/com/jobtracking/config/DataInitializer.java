@@ -1,23 +1,31 @@
 package com.jobtracking.config;
 
-import java.time.LocalDateTime;
-
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.jobtracking.application.entity.Application;
+import com.jobtracking.application.enums.ApplicationStatus;
+import com.jobtracking.application.repository.ApplicationRepository;
 import com.jobtracking.auth.entity.User;
 import com.jobtracking.auth.repository.UserRepository;
 import com.jobtracking.job.entity.Job;
 import com.jobtracking.job.repository.JobRepository;
 import com.jobtracking.organization.entity.Organization;
 import com.jobtracking.organization.repository.OrganizationRepository;
+import com.jobtracking.profile.entity.JobSeekerProfile;
+import com.jobtracking.profile.entity.JobSeekerSkill;
+import com.jobtracking.profile.entity.Skill;
+import com.jobtracking.profile.enums.Proficiency;
+import com.jobtracking.profile.repository.JobSeekerProfileRepository;
+import com.jobtracking.profile.repository.JobSeekerSkillsRepository;
+import com.jobtracking.profile.repository.SkillRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Component
-@Profile({"dev", "local"}) // Only run in development/local environments
+@Profile({"dev", "local", "test"}) // Only run in development/local/test environments, NOT in production
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
@@ -25,6 +33,10 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final OrganizationRepository organizationRepository;
     private final JobRepository jobRepository;
+    private final ApplicationRepository applicationRepository;
+    private final JobSeekerProfileRepository jobSeekerProfileRepository;
+    private final SkillRepository skillRepository;
+    private final JobSeekerSkillsRepository jobSeekerSkillsRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -32,6 +44,8 @@ public class DataInitializer implements CommandLineRunner {
         createTestUsers();
         // Create test companies and jobs
         createTestData();
+        // Create test applications
+        createTestApplications();
     }
 
     private void createTestUsers() {
@@ -168,6 +182,112 @@ public class DataInitializer implements CommandLineRunner {
             }
         } catch (Exception e) {
             // Handle test data creation errors silently
+        }
+    }
+
+    private void createTestApplications() {
+        try {
+            // Get the job seeker user
+            User jobSeeker = userRepository.findByEmail("jobseeker@gmail.com").orElse(null);
+            if (jobSeeker == null) return;
+
+            // Create or get job seeker profile
+            JobSeekerProfile profile = jobSeekerProfileRepository.findByUserId(jobSeeker.getId())
+                .orElseGet(() -> {
+                    JobSeekerProfile newProfile = new JobSeekerProfile();
+                    newProfile.setUser(jobSeeker);
+                    newProfile.setBioEn("Experienced software developer with passion for creating innovative solutions");
+                    newProfile.setEducation("Bachelor's in Computer Science");
+                    newProfile.setResumeLink("https://drive.google.com/file/d/demo-resume-link");
+                    return jobSeekerProfileRepository.save(newProfile);
+                });
+
+            // Always create demo skills (check if skills exist first)
+            createDemoSkills(profile);
+
+            // Create applications only if none exist
+            if (applicationRepository.count() == 0) {
+                // Get jobs to apply for
+                Job job1 = jobRepository.findById(1L).orElse(null);
+                Job job2 = jobRepository.findById(2L).orElse(null);
+                Job job3 = jobRepository.findById(3L).orElse(null);
+
+                // Create applications
+                if (job1 != null) {
+                    Application app1 = new Application();
+                    app1.setUser(jobSeeker);
+                    app1.setJob(job1);
+                    app1.setStatus(ApplicationStatus.APPLIED);
+                    app1.setResumePath("https://drive.google.com/file/d/demo-resume-link");
+                    app1.setCoverLetter("I am very interested in this Java Developer position and believe my skills align well with your requirements.");
+                    applicationRepository.save(app1);
+                }
+
+                if (job2 != null) {
+                    Application app2 = new Application();
+                    app2.setUser(jobSeeker);
+                    app2.setJob(job2);
+                    app2.setStatus(ApplicationStatus.SHORTLISTED);
+                    app2.setResumePath("https://drive.google.com/file/d/demo-resume-link");
+                    app2.setCoverLetter("I have extensive experience with React and would love to contribute to your frontend team.");
+                    applicationRepository.save(app2);
+                }
+
+                if (job3 != null) {
+                    Application app3 = new Application();
+                    app3.setUser(jobSeeker);
+                    app3.setJob(job3);
+                    app3.setStatus(ApplicationStatus.APPLIED);
+                    app3.setResumePath("https://drive.google.com/file/d/demo-resume-link");
+                    app3.setCoverLetter("My analytical skills and experience with data visualization make me a great fit for this role.");
+                    applicationRepository.save(app3);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error creating test applications: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void createDemoSkills(JobSeekerProfile profile) {
+        try {
+            // Check if skills already exist for this profile
+            if (jobSeekerSkillsRepository.findByJobSeekerProfile(profile).isEmpty()) {
+                String[] skillNames = {"Java", "Spring Boot", "React", "JavaScript", "MySQL", "Git", "REST APIs", "HTML/CSS"};
+                
+                System.out.println("Creating demo skills for profile ID: " + profile.getId());
+                
+                for (String skillName : skillNames) {
+                    try {
+                        // Create or get skill
+                        Skill skill = skillRepository.findByName(skillName)
+                            .orElseGet(() -> {
+                                System.out.println("Creating new skill: " + skillName);
+                                Skill newSkill = new Skill();
+                                newSkill.setName(skillName);
+                                return skillRepository.save(newSkill);
+                            });
+                        
+                        // Create job seeker skill association
+                        JobSeekerSkill jobSeekerSkill = new JobSeekerSkill();
+                        jobSeekerSkill.setJobSeekerProfile(profile);
+                        jobSeekerSkill.setSkill(skill);
+                        jobSeekerSkill.setProficiency(Proficiency.INTERMEDIATE); // Default proficiency
+                        jobSeekerSkillsRepository.save(jobSeekerSkill);
+                        
+                        System.out.println("Created skill association: " + skillName + " for profile " + profile.getId());
+                    } catch (Exception e) {
+                        System.err.println("Error creating skill " + skillName + ": " + e.getMessage());
+                    }
+                }
+                
+                System.out.println("Finished creating demo skills");
+            } else {
+                System.out.println("Skills already exist for profile ID: " + profile.getId());
+            }
+        } catch (Exception e) {
+            System.err.println("Error in createDemoSkills: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

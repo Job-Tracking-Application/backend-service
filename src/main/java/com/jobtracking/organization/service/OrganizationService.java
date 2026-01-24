@@ -86,8 +86,10 @@ public class OrganizationService {
     }
 
     public Optional<OrganizationResponse> getRecruiterOrganization(Long recruiterUserId) {
-        return organizationRepository.findByRecruiterUserId(recruiterUserId)
-                .map(this::mapToResponse);
+        List<Organization> organizations = organizationRepository.findByRecruiterUserId(recruiterUserId);
+        return organizations.isEmpty() ? 
+            Optional.empty() : 
+            Optional.of(mapToResponse(organizations.get(0)));
     }
 
     public boolean hasOrganization(Long recruiterUserId) {

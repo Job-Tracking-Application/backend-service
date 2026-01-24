@@ -29,10 +29,17 @@ public class DashboardController {
             return null;
         }
 
-        // The principal is the userId (Long) set in JwtAuthenticationFilter
+        // The principal is the userId (String) set in JwtAuthenticationFilter
         Object principal = auth.getPrincipal();
         if (principal instanceof Long) {
             return (Long) principal;
+        } else if (principal instanceof String) {
+            try {
+                return Long.parseLong((String) principal);
+            } catch (NumberFormatException e) {
+                System.err.println("Error parsing userId from principal: " + principal);
+                return null;
+            }
         }
 
         return null;
@@ -44,13 +51,18 @@ public class DashboardController {
         try {
             Long recruiterId = getCurrentUserId();
             if (recruiterId == null) {
+                System.err.println("Dashboard: User not authenticated");
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse<>(false, "User not authenticated", null));
             }
             
+            System.out.println("Dashboard: Getting stats for recruiter ID: " + recruiterId);
             DashboardStatsResponse stats = dashboardService.getRecruiterStats(recruiterId);
+            System.out.println("Dashboard: Stats retrieved successfully: " + stats);
             return ResponseEntity.ok(new ApiResponse<>(true, "Recruiter stats retrieved successfully", stats));
         } catch (Exception e) {
+            System.err.println("Dashboard: Error in getRecruiterStats: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError()
                     .body(new ApiResponse<>(false, "Error retrieving recruiter stats: " + e.getMessage(), null));
         }
