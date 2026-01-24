@@ -66,40 +66,63 @@ public class ProfileServiceImpl implements ProfileService {
 	            education
 	    );
 	}
-	
+
 	@Override
 	public void updateJobSeekerProfile(Long userId, UpdateProfileRequest req) {
-		// TODO Auto-generated method stub
-		User user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("user Not found"));
-		user.setFullname(req.fullName());
-		user.setUsername(req.userName());
-		userRepo.save(user);
 
-		JobSeekerProfile profile = jobSeekerProfileRepo.findByUserId(userId).orElseGet(() -> {
-			JobSeekerProfile p = new JobSeekerProfile();
-			p.setUser(user);
-			return p;
-		});
-		profile.setBioEn(req.about());
-		profile.setEducation(req.education());
-		profile.setResumeLink(req.resume());
-		jobSeekerProfileRepo.save(profile);
-		jobSeekerSkills.deleteByJobSeekerProfileId(profile.getId());
-		for (String skillName : req.skills()) {
+	    // 1️⃣ Fetch user
+	    User user = userRepo.findById(userId)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
 
-			Skill skill = skillRepo.findByName(skillName)
-					.orElseGet(() -> {
-						Skill s = new Skill();
-						s.setName(skillName);
-						return skillRepo.save(s);
-					});
-			JobSeekerSkill js = new JobSeekerSkill();
-			js.setJobSeekerProfile(profile);
-			js.setSkill(skill);
-			js.setProficiency(Proficiency.BEGINNER); // default
-			jobSeekerSkills.save(js);
-		}
+	    user.setFullname(req.fullName());
+	    user.setUsername(req.userName());
+	    userRepo.save(user);
 
+	    // 2️⃣ Fetch or create profile
+	    JobSeekerProfile profile = jobSeekerProfileRepo.findByUserId(userId)
+	            .orElseGet(() -> {
+	                JobSeekerProfile p = new JobSeekerProfile();
+	                p.setUser(user);
+	                return p;
+	            });
+
+	    profile.setBioEn(req.about());
+	    profile.setResumeLink(req.resume());
+
+	    // 3️⃣ ✅ Convert EducationDTO → JSON string
+	    if (req.education() != null) {
+	        try {
+	            ObjectMapper mapper = new ObjectMapper();
+	            profile.setEducation(mapper.writeValueAsString(req.education()));
+	        } catch (Exception e) {
+	            throw new RuntimeException("Invalid education data");
+	        }
+	    }
+
+	    jobSeekerProfileRepo.save(profile);
+
+
+	    jobSeekerProfileRepo.save(profile);
+
+	    // 4️⃣ Replace skills (delete + insert)
+	    jobSeekerSkills.deleteByJobSeekerProfileId(profile.getId());
+
+	    if (req.skills() != null) {
+	        for (String skillName : req.skills()) {
+
+	            Skill skill = skillRepo.findByName(skillName)
+	                    .orElseGet(() -> {
+	                        Skill s = new Skill();
+	                        s.setName(skillName);
+	                        return skillRepo.save(s);
+	                    });
+
+	            JobSeekerSkill js = new JobSeekerSkill();
+	            js.setJobSeekerProfile(profile);
+	            js.setSkill(skill);
+	            js.setProficiency(Proficiency.BEGINNER); // default
+	            jobSeekerSkills.save(js);
+	        }
+	    }
 	}
-
 }
