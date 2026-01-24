@@ -4,8 +4,10 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jobtracking.auth.entity.User;
 import com.jobtracking.auth.repository.UserRepository;
+import com.jobtracking.profile.dto.EducationDTO;
 import com.jobtracking.profile.dto.ProfileResponse;
 import com.jobtracking.profile.dto.UpdateProfileRequest;
 import com.jobtracking.profile.entity.JobSeekerProfile;
@@ -29,21 +31,42 @@ public class ProfileServiceImpl implements ProfileService {
 	private final SkillRepository skillRepo;
 
 	public ProfileResponse getJobSeekerProfile(Long id) {
-		User user = userRepo.findById(id).orElseThrow(() -> new RuntimeException("user Not found"));
-		JobSeekerProfile profile = jobSeekerProfileRepo.findByUserId(id)
-				.orElseThrow(() -> new RuntimeException("Profile Not found"));
-		ProfileResponse dto = new ProfileResponse();
-		dto.setFullName(user.getFullname());
-		dto.setEmail(user.getEmail());
-		dto.setUserName(user.getUsername());
-		dto.setSkills(jobSeekerSkills.findByJobSeekerProfile(profile).stream()
-				.map(jsSkill -> jsSkill.getSkill().getName()).toList());
-		dto.setResume(profile.getResumeLink());
-		dto.setAbout(profile.getBioEn());
-		dto.setEducation(profile.getEducation());
-		return dto;
-	}
 
+	    User user = userRepo.findById(id)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
+
+	    JobSeekerProfile profile = jobSeekerProfileRepo.findByUserId(id)
+	            .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+	    // Skills
+	    List<String> skills = jobSeekerSkills.findByJobSeekerProfile(profile)
+	            .stream()
+	            .map(jsSkill -> jsSkill.getSkill().getName())
+	            .toList();
+
+	    // Education (JSON string → Object)
+	    EducationDTO education = null;
+	    if (profile.getEducation() != null) {
+	        try {
+	            ObjectMapper mapper = new ObjectMapper();
+	            education = mapper.readValue(profile.getEducation(), EducationDTO.class);
+	        } catch (Exception e) {
+	            education = null;
+	        }
+	    }
+
+	    // ✅ RETURN record using constructor
+	    return new ProfileResponse(
+	            user.getFullname(),
+	            user.getEmail(),
+	            user.getUsername(),
+	            skills,
+	            profile.getResumeLink(),
+	            profile.getBioEn(),
+	            education
+	    );
+	}
+	
 	@Override
 	public void updateJobSeekerProfile(Long userId, UpdateProfileRequest req) {
 		// TODO Auto-generated method stub
