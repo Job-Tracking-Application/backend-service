@@ -34,7 +34,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Required for POST APIs
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login").permitAll()
+                        .requestMatchers("/auth/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/organizations").permitAll()
                         .requestMatchers("/recruiter/jobs/**").hasRole("RECRUITER")
                         .requestMatchers(HttpMethod.GET, "/jobs/**").authenticated() // Allow all authenticated users to view jobs
