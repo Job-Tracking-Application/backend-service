@@ -14,8 +14,9 @@ import com.jobtracking.auth.entity.User;
 import com.jobtracking.auth.repository.UserRepository;
 import com.jobtracking.job.entity.Job;
 import com.jobtracking.job.repository.JobRepository;
-import com.jobtracking.organization.entity.Organization;
 import com.jobtracking.organization.repository.OrganizationRepository;
+import com.jobtracking.organization.service.OrganizationService;
+import com.jobtracking.organization.dto.OrganizationRequest;
 import com.jobtracking.profile.entity.JobSeekerProfile;
 import com.jobtracking.profile.entity.JobSeekerSkill;
 import com.jobtracking.profile.entity.Skill;
@@ -34,6 +35,7 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final OrganizationRepository organizationRepository;
+    private final OrganizationService organizationService;
     private final JobRepository jobRepository;
     private final ApplicationRepository applicationRepository;
     private final JobSeekerProfileRepository jobSeekerProfileRepository;
@@ -78,6 +80,19 @@ public class DataInitializer implements CommandLineRunner {
                 userRepository.save(recruiter);
             }
 
+            // Create second recruiter user
+            if (!userRepository.existsByEmail("recruiter2@gmail.com")) {
+                User recruiter2 = User.builder()
+                        .username("recruiter2")
+                        .email("recruiter2@gmail.com")
+                        .passwordHash(passwordEncoder.encode("recruiter123"))
+                        .roleId(2) // Recruiter role
+                        .fullname("Second Recruiter")
+                        .active(true)
+                        .build();
+                userRepository.save(recruiter2);
+            }
+
             // Create job seeker user
             if (!userRepository.existsByEmail("jobseeker@gmail.com")) {
                 User jobSeeker = User.builder()
@@ -97,34 +112,46 @@ public class DataInitializer implements CommandLineRunner {
 
     private void createTestData() {
         try {
-            // Get the actual recruiter user ID
-            User recruiterUser = userRepository.findByEmail("chaitanya@gmail.com").orElse(null);
-            if (recruiterUser == null) {
+            // Get the actual recruiter user IDs
+            User recruiterUser1 = userRepository.findByEmail("chaitanya@gmail.com").orElse(null);
+            User recruiterUser2 = userRepository.findByEmail("recruiter2@gmail.com").orElse(null);
+            
+            if (recruiterUser1 == null) {
                 return; // Can't create companies without recruiter
             }
-            Long actualRecruiterId = recruiterUser.getId();
             
-            // Create test companies
+            Long recruiterId1 = recruiterUser1.getId();
+            Long recruiterId2 = recruiterUser2 != null ? recruiterUser2.getId() : recruiterId1;
+            
+            // Create test companies using the service layer to enforce business rules
             if (organizationRepository.count() == 0) {
-                Organization techSoft = new Organization();
-                techSoft.setName("TechSoft Pvt Ltd");
-                techSoft.setWebsite("https://techsoft.com");
-                techSoft.setCity("Bangalore");
-                techSoft.setContactEmail("hr@techsoft.com");
-                techSoft.setDescription("Leading software development company");
-                techSoft.setVerified(true);
-                techSoft.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
-                organizationRepository.save(techSoft);
-
-                Organization dataWorks = new Organization();
-                dataWorks.setName("DataWorks Inc");
-                dataWorks.setWebsite("https://dataworks.com");
-                dataWorks.setCity("Mumbai");
-                dataWorks.setContactEmail("careers@dataworks.com");
-                dataWorks.setDescription("Data analytics and AI solutions");
-                dataWorks.setVerified(true);
-                dataWorks.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
-                organizationRepository.save(dataWorks);
+                try {
+                    // Create company for first recruiter
+                    OrganizationRequest techSoftRequest = new OrganizationRequest(
+                        "TechSoft Pvt Ltd",
+                        "https://techsoft.com", 
+                        "Bangalore",
+                        "hr@techsoft.com",
+                        "Leading software development company",
+                        null
+                    );
+                    organizationService.createOrganization(techSoftRequest, recruiterId1);
+                    
+                    // Create company for second recruiter (if exists)
+                    if (recruiterUser2 != null) {
+                        OrganizationRequest dataWorksRequest = new OrganizationRequest(
+                            "DataWorks Inc",
+                            "https://dataworks.com",
+                            "Mumbai", 
+                            "careers@dataworks.com",
+                            "Data analytics and AI solutions",
+                            null
+                        );
+                        organizationService.createOrganization(dataWorksRequest, recruiterId2);
+                    }
+                } catch (Exception e) {
+                    // Companies might already exist, continue
+                }
             }
 
             // Create test jobs
@@ -137,7 +164,7 @@ public class DataInitializer implements CommandLineRunner {
                 job1.setLocation("Bangalore");
                 job1.setJobType("Full-time");
                 job1.setCompanyId(1L); // TechSoft company ID
-                job1.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
+                job1.setRecruiterUserId(recruiterId1); // First recruiter
                 job1.setIsActive(true);
                 jobRepository.save(job1);
 
@@ -149,7 +176,7 @@ public class DataInitializer implements CommandLineRunner {
                 job2.setLocation("Mumbai");
                 job2.setJobType("Full-time");
                 job2.setCompanyId(2L); // DataWorks company ID
-                job2.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
+                job2.setRecruiterUserId(recruiterId2); // Second recruiter
                 job2.setIsActive(true);
                 jobRepository.save(job2);
 
@@ -161,7 +188,7 @@ public class DataInitializer implements CommandLineRunner {
                 job3.setLocation("Mumbai");
                 job3.setJobType("Full-time");
                 job3.setCompanyId(2L); // DataWorks company ID
-                job3.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
+                job3.setRecruiterUserId(recruiterId2); // Second recruiter
                 job3.setIsActive(true);
                 jobRepository.save(job3);
 
@@ -173,7 +200,7 @@ public class DataInitializer implements CommandLineRunner {
                 job4.setLocation("Bangalore");
                 job4.setJobType("Full-time");
                 job4.setCompanyId(1L); // TechSoft company ID
-                job4.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
+                job4.setRecruiterUserId(recruiterId1); // First recruiter
                 job4.setIsActive(true);
                 jobRepository.save(job4);
 
@@ -185,7 +212,7 @@ public class DataInitializer implements CommandLineRunner {
                 job5.setLocation("Mumbai");
                 job5.setJobType("Full-time");
                 job5.setCompanyId(2L); // DataWorks company ID
-                job5.setRecruiterUserId(actualRecruiterId); // Use actual recruiter ID
+                job5.setRecruiterUserId(recruiterId2); // Second recruiter
                 job5.setIsActive(true);
                 jobRepository.save(job5);
             }
@@ -270,6 +297,9 @@ public class DataInitializer implements CommandLineRunner {
 
     private void createInitialSkills(JobSeekerProfile profile) {
         try {
+            // Create comprehensive skills list first (regardless of profile)
+            createAllSkills();
+            
             // Check if skills already exist for this profile
             if (jobSeekerSkillsRepository.findByJobSeekerProfile(profile).isEmpty()) {
                 String[] skillNames = {"Java", "Spring Boot", "React", "JavaScript", "MySQL", "Git", "REST APIs", "HTML/CSS"};
@@ -299,6 +329,50 @@ public class DataInitializer implements CommandLineRunner {
             }
         } catch (Exception e) {
             // Error in createInitialSkills - continue silently
+        }
+    }
+
+    private void createAllSkills() {
+        try {
+            String[] allSkills = {
+                // Programming Languages
+                "Java", "Python", "JavaScript", "TypeScript", "C#", "C++", "PHP", "Ruby", "Go", "Kotlin", "Swift",
+                
+                // Frontend Technologies
+                "React", "Angular", "Vue.js", "HTML/CSS", "Bootstrap", "Tailwind CSS", "jQuery", "SASS/SCSS",
+                
+                // Backend Technologies
+                "Spring Boot", "Node.js", "Express.js", "Django", "Flask", "ASP.NET", "Laravel", "Ruby on Rails",
+                
+                // Databases
+                "MySQL", "PostgreSQL", "MongoDB", "Redis", "Oracle", "SQL Server", "SQLite", "Cassandra",
+                
+                // Cloud & DevOps
+                "AWS", "Azure", "Google Cloud", "Docker", "Kubernetes", "Jenkins", "Git", "GitHub", "GitLab",
+                
+                // Tools & Frameworks
+                "REST APIs", "GraphQL", "Microservices", "Spring Framework", "Hibernate", "JPA", "Maven", "Gradle",
+                
+                // Testing
+                "JUnit", "Mockito", "Jest", "Cypress", "Selenium", "TestNG",
+                
+                // Other Skills
+                "Agile", "Scrum", "Project Management", "UI/UX Design", "Data Analysis", "Machine Learning", "AI"
+            };
+            
+            for (String skillName : allSkills) {
+                try {
+                    if (!skillRepository.findByName(skillName).isPresent()) {
+                        Skill skill = new Skill();
+                        skill.setName(skillName);
+                        skillRepository.save(skill);
+                    }
+                } catch (Exception e) {
+                    // Continue with other skills
+                }
+            }
+        } catch (Exception e) {
+            // Error creating skills - continue silently
         }
     }
 }

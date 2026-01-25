@@ -25,7 +25,10 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     
     // Methods from profile backend API
     List<Application> findByJobId(Long jobId);
-    List<Application> findByUserId(Long userId);
+    
+    @Query("SELECT a FROM Application a WHERE a.user.id = :userId ORDER BY a.appliedAt DESC")
+    List<Application> findByUserId(@Param("userId") Long userId);
+    
     boolean existsByJobIdAndUserId(Long jobId, Long userId);
     
     // Dashboard stats methods

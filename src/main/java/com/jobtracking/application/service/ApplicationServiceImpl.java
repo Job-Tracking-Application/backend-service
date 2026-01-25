@@ -1,27 +1,30 @@
 package com.jobtracking.application.service;
 
 import java.util.List;
-import com.jobtracking.application.entity.Application;
-import com.jobtracking.application.repository.ApplicationRepository;
-import com.jobtracking.audit.service.AuditLogService;
-import com.jobtracking.profile.repository.JobSeekerProfileRepository;
-import com.jobtracking.profile.entity.JobSeekerProfile;
-import com.jobtracking.auth.entity.User;
-
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import com.jobtracking.application.dto.CandidateApplicationResponse;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jobtracking.audit.service.AuditLogService;
 import com.jobtracking.application.dto.ApplicationResponse;
 import com.jobtracking.application.dto.ApplyJobRequest;
-import com.jobtracking.application.enums.ApplicationStatus;
+import com.jobtracking.application.dto.CandidateApplicationResponse;
 import com.jobtracking.application.dto.UpdateStatusRequest;
+import com.jobtracking.application.entity.Application;
+import com.jobtracking.application.enums.ApplicationStatus;
+import com.jobtracking.application.repository.ApplicationRepository;
+import com.jobtracking.auth.entity.User;
 import com.jobtracking.auth.repository.UserRepository;
 import com.jobtracking.job.entity.Job;
 import com.jobtracking.job.repository.JobRepository;
 import com.jobtracking.organization.repository.OrganizationRepository;
+import com.jobtracking.profile.entity.JobSeekerProfile;
+import com.jobtracking.profile.repository.JobSeekerProfileRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
@@ -34,6 +37,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final JobRepository jobRepository;
     private final OrganizationRepository organizationRepository;
     private final AuditLogService auditLogService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public void createApplication(Long jobId, Long userId, ApplyJobRequest applyJobRequest) {
@@ -52,6 +56,14 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setJob(job);
         application.setUser(user);
         application.setResumePath(applyJobRequest.resume());
+        application.setCoverLetter(applyJobRequest.coverLetter());
+        
+        // Store additional fields in extension JSON
+        if (hasAdditionalFields(applyJobRequest)) {
+            String extensionJson = buildExtensionJson(applyJobRequest);
+            application.setExtension(extensionJson);
+        }
+        
         try {
             Application savedApplication = applicationRepository.save(application);
             
@@ -63,6 +75,43 @@ public class ApplicationServiceImpl implements ApplicationService {
             // Second guard: DB-level safety (race condition)
             throw new IllegalStateException("You have already applied for this job");
         }
+    }
+    
+    private boolean hasAdditionalFields(ApplyJobRequest request) {
+        return (request.portfolioUrl() != null && !request.portfolioUrl().trim().isEmpty()) ||
+               (request.linkedinUrl() != null && !request.linkedinUrl().trim().isEmpty()) ||
+               (request.githubUrl() != null && !request.githubUrl().trim().isEmpty()) ||
+               (request.additionalNotes() != null && !request.additionalNotes().trim().isEmpty());
+    }
+    
+    private String buildExtensionJson(ApplyJobRequest request) {
+        StringBuilder json = new StringBuilder("{");
+        boolean hasField = false;
+        
+        if (request.portfolioUrl() != null && !request.portfolioUrl().trim().isEmpty()) {
+            json.append("\"portfolioUrl\":\"").append(request.portfolioUrl().trim()).append("\"");
+            hasField = true;
+        }
+        
+        if (request.linkedinUrl() != null && !request.linkedinUrl().trim().isEmpty()) {
+            if (hasField) json.append(",");
+            json.append("\"linkedinUrl\":\"").append(request.linkedinUrl().trim()).append("\"");
+            hasField = true;
+        }
+        
+        if (request.githubUrl() != null && !request.githubUrl().trim().isEmpty()) {
+            if (hasField) json.append(",");
+            json.append("\"githubUrl\":\"").append(request.githubUrl().trim()).append("\"");
+            hasField = true;
+        }
+        
+        if (request.additionalNotes() != null && !request.additionalNotes().trim().isEmpty()) {
+            if (hasField) json.append(",");
+            json.append("\"additionalNotes\":\"").append(request.additionalNotes().trim().replace("\"", "\\\"")).append("\"");
+        }
+        
+        json.append("}");
+        return json.toString();
     }
 
     @Override
@@ -139,16 +188,49 @@ public class ApplicationServiceImpl implements ApplicationService {
                 }
             }
 
+            // Parse extension JSON to extract additional fields
+            String portfolioUrl = null;
+            String linkedinUrl = null;
+            String githubUrl = null;
+            String additionalNotes = null;
+            
+            if (application.getExtension() != null && !application.getExtension().trim().isEmpty()) {
+                try {
+                    String extension = application.getExtension();
+                    
+                    // Use Jackson ObjectMapper for proper JSON parsing
+                    JsonNode jsonNode = objectMapper.readTree(extension);
+                    
+                    portfolioUrl = jsonNode.has("portfolioUrl") ? jsonNode.get("portfolioUrl").asText(null) : null;
+                    linkedinUrl = jsonNode.has("linkedinUrl") ? jsonNode.get("linkedinUrl").asText(null) : null;
+                    githubUrl = jsonNode.has("githubUrl") ? jsonNode.get("githubUrl").asText(null) : null;
+                    additionalNotes = jsonNode.has("additionalNotes") ? jsonNode.get("additionalNotes").asText(null) : null;
+                    
+                    // Clean up empty strings
+                    portfolioUrl = (portfolioUrl != null && portfolioUrl.trim().isEmpty()) ? null : portfolioUrl;
+                    linkedinUrl = (linkedinUrl != null && linkedinUrl.trim().isEmpty()) ? null : linkedinUrl;
+                    githubUrl = (githubUrl != null && githubUrl.trim().isEmpty()) ? null : githubUrl;
+                    additionalNotes = (additionalNotes != null && additionalNotes.trim().isEmpty()) ? null : additionalNotes;
+                    
+                } catch (Exception e) {
+                    // Keep additional fields as null if parsing fails
+                }
+            }
+
             return new ApplicationResponse(
                     application.getId(),
                     user.getFullname(),
                     user.getEmail(),
                     skills,
                     application.getStatus().name(),
-                    application.getResumePath());
+                    application.getResumePath(),
+                    application.getCoverLetter(),
+                    portfolioUrl,
+                    linkedinUrl,
+                    githubUrl,
+                    additionalNotes);
         } catch (Exception e) {
             throw new RuntimeException("Error processing application data", e);
         }
     }
-
 }

@@ -8,5 +8,10 @@ public record ApplicationResponse(
         String email,
         List<String> skills,
         String status,
-        String resume) {
+        String resume,
+        String coverLetter,
+        String portfolioUrl,
+        String linkedinUrl,
+        String githubUrl,
+        String additionalNotes) {
 }

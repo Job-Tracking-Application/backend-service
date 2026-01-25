@@ -9,7 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import com.jobtracking.common.response.ApiResponse;
-import com.jobtracking.job.entity.Job;
+import com.jobtracking.job.dto.JobWithSkillsResponse;
 import com.jobtracking.job.service.JobService;
 
 @RestController
@@ -45,7 +45,7 @@ public class RecruiterJobController {
     }
 
     @GetMapping("/my-jobs")
-    public ResponseEntity<ApiResponse<List<Job>>> getMyJobs() {
+    public ResponseEntity<ApiResponse<List<JobWithSkillsResponse>>> getMyJobs() {
         try {
             Long recruiterId = getCurrentUserId();
             if (recruiterId == null) {
@@ -53,7 +53,7 @@ public class RecruiterJobController {
                         .body(new ApiResponse<>(false, "User not authenticated", null));
             }
 
-            List<Job> jobs = jobService.getJobsByRecruiter(recruiterId);
+            List<JobWithSkillsResponse> jobs = jobService.getJobsByRecruiterWithSkills(recruiterId);
             return ResponseEntity.ok(
                     new ApiResponse<>(true, "Recruiter jobs fetched successfully", jobs)
             );

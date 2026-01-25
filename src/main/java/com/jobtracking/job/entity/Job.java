@@ -3,8 +3,10 @@ package com.jobtracking.job.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import com.jobtracking.profile.entity.Skill;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "jobs")
@@ -66,6 +68,15 @@ public class Job {
 
     @Column(columnDefinition = "json")
     private String extension;
+
+    // Many-to-Many relationship with Skills through job_skills table
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "job_skills",
+        joinColumns = @JoinColumn(name = "job_id"),
+        inverseJoinColumns = @JoinColumn(name = "skill_id")
+    )
+    private List<Skill> skills;
 
     @PrePersist
     protected void onCreate() {

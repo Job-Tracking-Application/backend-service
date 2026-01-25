@@ -89,6 +89,31 @@ public class OrganizationController {
         }
     }
 
+    // ===================== GET RECRUITER'S ORGANIZATIONS =====================
+    @GetMapping("/recruiter")
+    public ResponseEntity<ApiResponse<List<OrganizationResponse>>> getRecruiterOrganizations() {
+        try {
+            Long recruiterId = getCurrentUserId();
+            if (recruiterId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(false, "User not authenticated", null));
+            }
+
+            List<OrganizationResponse> response = organizationRepository.findByRecruiterUserId(recruiterId)
+                    .stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(
+                    new ApiResponse<>(true, "Recruiter organizations retrieved successfully", response)
+            );
+        } catch (Exception e) {
+            log.error("Error fetching recruiter organizations", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "Error retrieving recruiter organizations", null));
+        }
+    }
+
     // ===================== GET BY ID =====================
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<OrganizationResponse>> getOrganization(@PathVariable Long id) {
