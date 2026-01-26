@@ -34,25 +34,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Required for POST APIs
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login").permitAll()
-                        .requestMatchers("/auth/me").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/organizations").permitAll()
-                        .requestMatchers("/recruiter/jobs/**").hasRole("RECRUITER")
-                        .requestMatchers(HttpMethod.GET, "/jobs/**").authenticated() // Allow all authenticated users to view jobs
-                        .requestMatchers("/jobs/**").hasRole("RECRUITER") // Only recruiters can create/update/delete jobs
-                        .requestMatchers("/organizations/**").hasRole("RECRUITER")
-                        .requestMatchers("/dashboard/**").authenticated()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/applications/job/**").hasRole("RECRUITER")
-                        .requestMatchers("/applications/manage/**").hasRole("RECRUITER")
-                        .requestMatchers("/applications/me").hasRole("JOB_SEEKER")
-                        .requestMatchers("/applications/my").hasRole("JOB_SEEKER")
-                        .requestMatchers("/applications/check/**").hasRole("JOB_SEEKER")
-                        .requestMatchers(HttpMethod.POST, "/applications/**").hasRole("JOB_SEEKER") // Job seekers can apply for jobs
-                        .requestMatchers("/profile/jobseeker").hasRole("JOB_SEEKER")
-                        .requestMatchers("/profile/recruiter").hasRole("RECRUITER")
-                        .requestMatchers("/profile/**").authenticated()
+                        .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(
+                                "/actuator/health",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -73,7 +57,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://localhost:3000"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
