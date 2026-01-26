@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.jobtracking.common.exception.ResourceNotFoundException;
 import com.jobtracking.admin.dto.AdminApplicationResponse;
 import com.jobtracking.admin.dto.AdminCompanyResponse;
 import com.jobtracking.admin.dto.AdminJobResponse;
@@ -51,7 +52,7 @@ public class AdminService {
 		long jobCount = jobRepo.count();
 		long orgCount = orgRepo.count();
 		long appCount = appRepo.count();
-		
+
 		return new AdminStatsResponse(userCount, jobCount, orgCount, appCount);
 	}
 
@@ -62,9 +63,9 @@ public class AdminService {
 
 	public List<AdminJobResponse> getAllJobs() {
 		Map<Long, String> companyNames = getCompanyNamesMap();
-		
+
 		List<Job> jobs = jobRepo.findAll();
-		
+
 		return jobs.stream()
 				.filter(j -> j.getDeletedAt() == null)
 				.map(j -> new AdminJobResponse(j.getId(), j.getTitle(),
@@ -124,10 +125,10 @@ public class AdminService {
 			// Toggle the active status
 			j.setIsActive(!j.getIsActive());
 			jobRepo.save(j);
-			auditLogService.log("JOB", jobId, 
-				j.getIsActive() ? "Activated" : "Deactivated", adminId);
+			auditLogService.log("JOB", jobId,
+					j.getIsActive() ? "Activated" : "Deactivated", adminId);
 		}, () -> {
-			throw new RuntimeException("Job not found with ID: " + jobId);
+			throw new ResourceNotFoundException("Job not found with ID: " + jobId);
 		});
 	}
 
@@ -142,7 +143,7 @@ public class AdminService {
 
 	public Page<AdminApplicationResponse> getAllApplications(int page, int size, String status) {
 		Pageable pageable = PageRequest.of(page, size, Sort.by("appliedAt").descending());
-		
+
 		// Convert string status to enum if provided
 		ApplicationStatus statusEnum = null;
 		if (status != null && !status.isEmpty()) {
@@ -152,9 +153,9 @@ public class AdminService {
 				// Invalid status, will return empty results
 			}
 		}
-		
+
 		Page<Application> applications = appRepo.filterApplications(statusEnum, pageable);
-		
+
 		final Map<Long, String> jobTitles = jobRepo.findAll().stream().collect(
 				Collectors.toMap(Job::getId, Job::getTitle));
 		final Map<Long, String> userNames = userRepo.findAll().stream().collect(
@@ -174,8 +175,8 @@ public class AdminService {
 
 	public AdminApplicationResponse getApplication(Long id) {
 		Application application = appRepo.findById(id)
-				.orElseThrow(() -> new RuntimeException("Application not found"));
-		
+				.orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+
 		final Map<Long, String> jobTitles = jobRepo.findAll().stream().collect(
 				Collectors.toMap(Job::getId, Job::getTitle));
 		final Map<Long, String> userNames = userRepo.findAll().stream().collect(
@@ -195,8 +196,8 @@ public class AdminService {
 
 	public void deleteApplication(Long applicationId, Long adminId) {
 		Application application = appRepo.findById(applicationId)
-				.orElseThrow(() -> new RuntimeException("Application not found"));
-		
+				.orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+
 		appRepo.delete(application);
 		auditLogService.log("APPLICATION", applicationId, "ADMIN_DELETE", adminId);
 	}

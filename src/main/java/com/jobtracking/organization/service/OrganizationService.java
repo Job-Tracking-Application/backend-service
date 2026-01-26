@@ -7,7 +7,9 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.jobtracking.audit.service.AuditLogService;
-import com.jobtracking.common.exception.CustomException;
+import com.jobtracking.common.exception.ConflictException;
+import com.jobtracking.common.exception.ResourceNotFoundException;
+import com.jobtracking.common.exception.UnauthorizedException;
 import com.jobtracking.organization.dto.OrganizationRequest;
 import com.jobtracking.organization.dto.OrganizationResponse;
 import com.jobtracking.organization.entity.Organization;
@@ -32,15 +34,15 @@ public class OrganizationService {
 
     public OrganizationResponse getOrganizationById(Long organizationId) {
         Organization organization = organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new CustomException("Organization not found"));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Organization not found"));
+
         return mapToResponse(organization);
     }
 
     public OrganizationResponse createOrganization(OrganizationRequest request, Long recruiterUserId) {
         // Check if recruiter already has a company
         if (organizationRepository.existsByRecruiterUserId(recruiterUserId)) {
-            throw new CustomException("Recruiter already has a company profile");
+            throw new ConflictException("Recruiter already has a company profile");
         }
 
         Organization organization = new Organization();
@@ -54,20 +56,21 @@ public class OrganizationService {
         organization.setExtension(request.extension());
 
         Organization saved = organizationRepository.save(organization);
-        
+
         // Log the creation
         auditLogService.log("COMPANY", saved.getId(), "CREATED", recruiterUserId);
 
         return mapToResponse(saved);
     }
 
-    public OrganizationResponse updateOrganization(Long organizationId, OrganizationRequest request, Long recruiterUserId) {
+    public OrganizationResponse updateOrganization(Long organizationId, OrganizationRequest request,
+            Long recruiterUserId) {
         Organization organization = organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new CustomException("Organization not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Organization not found"));
 
         // Check if the recruiter owns this organization
         if (!organization.getRecruiterUserId().equals(recruiterUserId)) {
-            throw new CustomException("You can only update your own company profile");
+            throw new UnauthorizedException("You can only update your own company profile");
         }
 
         organization.setName(request.name());
@@ -78,7 +81,7 @@ public class OrganizationService {
         organization.setExtension(request.extension());
 
         Organization updated = organizationRepository.save(organization);
-        
+
         // Log the update
         auditLogService.log("COMPANY", updated.getId(), "UPDATED", recruiterUserId);
 
@@ -87,9 +90,7 @@ public class OrganizationService {
 
     public Optional<OrganizationResponse> getRecruiterOrganization(Long recruiterUserId) {
         List<Organization> organizations = organizationRepository.findByRecruiterUserId(recruiterUserId);
-        return organizations.isEmpty() ? 
-            Optional.empty() : 
-            Optional.of(mapToResponse(organizations.get(0)));
+        return organizations.isEmpty() ? Optional.empty() : Optional.of(mapToResponse(organizations.get(0)));
     }
 
     public boolean hasOrganization(Long recruiterUserId) {
@@ -107,7 +108,6 @@ public class OrganizationService {
                 organization.getVerified(),
                 organization.getCreatedAt(),
                 organization.getUpdatedAt(),
-                organization.getExtension()
-        );
+                organization.getExtension());
     }
 }

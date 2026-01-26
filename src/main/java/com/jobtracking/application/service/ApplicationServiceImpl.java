@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jobtracking.audit.service.AuditLogService;
+import com.jobtracking.common.exception.ConflictException;
+import com.jobtracking.common.exception.ResourceNotFoundException;
 import com.jobtracking.application.dto.ApplicationResponse;
 import com.jobtracking.application.dto.ApplyJobRequest;
 import com.jobtracking.application.dto.CandidateApplicationResponse;
@@ -43,73 +45,76 @@ public class ApplicationServiceImpl implements ApplicationService {
     public void createApplication(Long jobId, Long userId, ApplyJobRequest applyJobRequest) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new IllegalArgumentException("Job not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
         // First guard: service-level duplicate check
         if (applicationRepository.existsByJobIdAndUserId(jobId, userId)) {
-            throw new IllegalStateException("You have already applied for this job");
+            throw new ConflictException("You have already applied for this job");
         }
 
-        
         Application application = new Application();
         application.setJob(job);
         application.setUser(user);
         application.setResumePath(applyJobRequest.resume());
         application.setCoverLetter(applyJobRequest.coverLetter());
-        
+
         // Store additional fields in extension JSON
         if (hasAdditionalFields(applyJobRequest)) {
             String extensionJson = buildExtensionJson(applyJobRequest);
             application.setExtension(extensionJson);
         }
-        
+
         try {
             Application savedApplication = applicationRepository.save(application);
-            
+
             // Log job application
-            auditLogService.log("APPLICATION", savedApplication.getId(), "APPLIED", userId, 
-                "Applied for job: " + job.getTitle());
-                
+            auditLogService.log("APPLICATION", savedApplication.getId(), "APPLIED", userId,
+                    "Applied for job: " + job.getTitle());
+
         } catch (DataIntegrityViolationException ex) {
             // Second guard: DB-level safety (race condition)
-            throw new IllegalStateException("You have already applied for this job");
+            throw new ConflictException("You have already applied for this job");
         }
     }
-    
+
     private boolean hasAdditionalFields(ApplyJobRequest request) {
         return (request.portfolioUrl() != null && !request.portfolioUrl().trim().isEmpty()) ||
-               (request.linkedinUrl() != null && !request.linkedinUrl().trim().isEmpty()) ||
-               (request.githubUrl() != null && !request.githubUrl().trim().isEmpty()) ||
-               (request.additionalNotes() != null && !request.additionalNotes().trim().isEmpty());
+                (request.linkedinUrl() != null && !request.linkedinUrl().trim().isEmpty()) ||
+                (request.githubUrl() != null && !request.githubUrl().trim().isEmpty()) ||
+                (request.additionalNotes() != null && !request.additionalNotes().trim().isEmpty());
     }
-    
+
     private String buildExtensionJson(ApplyJobRequest request) {
         StringBuilder json = new StringBuilder("{");
         boolean hasField = false;
-        
+
         if (request.portfolioUrl() != null && !request.portfolioUrl().trim().isEmpty()) {
             json.append("\"portfolioUrl\":\"").append(request.portfolioUrl().trim()).append("\"");
             hasField = true;
         }
-        
+
         if (request.linkedinUrl() != null && !request.linkedinUrl().trim().isEmpty()) {
-            if (hasField) json.append(",");
+            if (hasField)
+                json.append(",");
             json.append("\"linkedinUrl\":\"").append(request.linkedinUrl().trim()).append("\"");
             hasField = true;
         }
-        
+
         if (request.githubUrl() != null && !request.githubUrl().trim().isEmpty()) {
-            if (hasField) json.append(",");
+            if (hasField)
+                json.append(",");
             json.append("\"githubUrl\":\"").append(request.githubUrl().trim()).append("\"");
             hasField = true;
         }
-        
+
         if (request.additionalNotes() != null && !request.additionalNotes().trim().isEmpty()) {
-            if (hasField) json.append(",");
-            json.append("\"additionalNotes\":\"").append(request.additionalNotes().trim().replace("\"", "\\\"")).append("\"");
+            if (hasField)
+                json.append(",");
+            json.append("\"additionalNotes\":\"").append(request.additionalNotes().trim().replace("\"", "\\\""))
+                    .append("\"");
         }
-        
+
         json.append("}");
         return json.toString();
     }
@@ -126,7 +131,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                                 .map(org -> org.getName())
                                 .orElse("Unknown Company");
                     }
-                    
+
                     return new CandidateApplicationResponse(
                             application.getId(),
                             application.getJob().getTitle(),
@@ -152,19 +157,19 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .map(application -> {
                     ApplicationStatus oldStatus = application.getStatus();
                     ApplicationStatus newStatus = ApplicationStatus.valueOf(updateStatusRequest.status().toUpperCase());
-                    
+
                     application.setStatus(newStatus);
                     Application savedApplication = applicationRepository.save(application);
-                    
+
                     // Log status change (performed by recruiter/admin)
-                    auditLogService.log("APPLICATION", savedApplication.getId(), "STATUS_CHANGED", 
-                        savedApplication.getJob().getRecruiterUserId(), 
-                        "Changed from " + oldStatus + " to " + newStatus);
-                    
+                    auditLogService.log("APPLICATION", savedApplication.getId(), "STATUS_CHANGED",
+                            savedApplication.getJob().getRecruiterUserId(),
+                            "Changed from " + oldStatus + " to " + newStatus);
+
                     return savedApplication;
                 })
                 .map(this::mapToApplicationResponse)
-                .orElseThrow(() -> new RuntimeException("Application not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
     }
 
     @Override
@@ -177,7 +182,7 @@ public class ApplicationServiceImpl implements ApplicationService {
             User user = application.getUser();
             JobSeekerProfile profile = jobSeekerProfileRepository.findByUserId(user.getId()).orElse(null);
             List<String> skills = List.of(); // Default empty list
-            
+
             if (profile != null && profile.getSkills() != null) {
                 try {
                     skills = profile.getSkills().stream()
@@ -193,25 +198,27 @@ public class ApplicationServiceImpl implements ApplicationService {
             String linkedinUrl = null;
             String githubUrl = null;
             String additionalNotes = null;
-            
+
             if (application.getExtension() != null && !application.getExtension().trim().isEmpty()) {
                 try {
                     String extension = application.getExtension();
-                    
+
                     // Use Jackson ObjectMapper for proper JSON parsing
                     JsonNode jsonNode = objectMapper.readTree(extension);
-                    
+
                     portfolioUrl = jsonNode.has("portfolioUrl") ? jsonNode.get("portfolioUrl").asText(null) : null;
                     linkedinUrl = jsonNode.has("linkedinUrl") ? jsonNode.get("linkedinUrl").asText(null) : null;
                     githubUrl = jsonNode.has("githubUrl") ? jsonNode.get("githubUrl").asText(null) : null;
-                    additionalNotes = jsonNode.has("additionalNotes") ? jsonNode.get("additionalNotes").asText(null) : null;
-                    
+                    additionalNotes = jsonNode.has("additionalNotes") ? jsonNode.get("additionalNotes").asText(null)
+                            : null;
+
                     // Clean up empty strings
                     portfolioUrl = (portfolioUrl != null && portfolioUrl.trim().isEmpty()) ? null : portfolioUrl;
                     linkedinUrl = (linkedinUrl != null && linkedinUrl.trim().isEmpty()) ? null : linkedinUrl;
                     githubUrl = (githubUrl != null && githubUrl.trim().isEmpty()) ? null : githubUrl;
-                    additionalNotes = (additionalNotes != null && additionalNotes.trim().isEmpty()) ? null : additionalNotes;
-                    
+                    additionalNotes = (additionalNotes != null && additionalNotes.trim().isEmpty()) ? null
+                            : additionalNotes;
+
                 } catch (Exception e) {
                     // Keep additional fields as null if parsing fails
                 }

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import com.jobtracking.application.dto.ApplicationResponse;
+import com.jobtracking.application.dto.CandidateApplicationResponse;
 import com.jobtracking.application.service.ApplicationService;
 
 import org.springframework.http.HttpStatus;
@@ -34,82 +35,40 @@ public class ApplicationController {
     @PostMapping("/{jobId}")
     public ResponseEntity<String> createApplication(@PathVariable Long jobId,
             @RequestBody ApplyJobRequest applyJobRequest, Authentication authentication) {
-        try {
-            Long userId = Long.valueOf(authentication.getName());
-            applicationService.createApplication(jobId, userId, applyJobRequest); 
-            return ResponseEntity.ok("Job applied successfully");
-        } catch (IllegalStateException ex) {
-            // duplicate application
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(ex.getMessage());
-        } catch (IllegalArgumentException ex) {        // user or job not found
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(ex.getMessage());
-        }
+        Long userId = Long.valueOf(authentication.getName());
+        applicationService.createApplication(jobId, userId, applyJobRequest);
+        return ResponseEntity.ok("Job applied successfully");
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMyApplications(Authentication authentication) {
-        try {
-            Long userId = Long.valueOf(authentication.getName());
-            return ResponseEntity.ok(
-                    applicationService.getCandidateApplication(userId)
-            );
-        } catch (Exception ex) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Unable to fetch applications");
-        }
+    public ResponseEntity<List<CandidateApplicationResponse>> getMyApplications(Authentication authentication) {
+        Long userId = Long.valueOf(authentication.getName());
+        return ResponseEntity.ok(applicationService.getCandidateApplication(userId));
     }
 
     @GetMapping("/job/{jobId}")
-    public ResponseEntity<?> getApplicationsByJobId(@PathVariable Long jobId) {
-        try {
-            List<ApplicationResponse> applications = applicationService.getApplication(jobId);
-            if (applications.isEmpty()) {
-                return ResponseEntity
-                        .status(HttpStatus.NO_CONTENT)
-                        .build();
-            }
-            return ResponseEntity.ok(applications);
-        } catch (Exception ex) {
+    public ResponseEntity<List<ApplicationResponse>> getApplicationsByJobId(@PathVariable Long jobId) {
+        List<ApplicationResponse> applications = applicationService.getApplication(jobId);
+        if (applications.isEmpty()) {
             return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Unable to fetch applications for job: " + ex.getMessage());
+                    .status(HttpStatus.NO_CONTENT)
+                    .build();
         }
+        return ResponseEntity.ok(applications);
     }
 
     @PatchMapping("/manage/{id}")
-    public ResponseEntity<?> updateApplication(@PathVariable Long id,
+    public ResponseEntity<ApplicationResponse> updateApplication(@PathVariable Long id,
             @Valid @RequestBody UpdateStatusRequest updateStatusRequest) {
-    	 try {
-    	        ApplicationResponse response =
-    	                applicationService.updateApplication(id, updateStatusRequest);
-    	        return ResponseEntity.ok(response);
-
-    	    } catch (RuntimeException ex) {
-    	        return ResponseEntity
-    	                .status(HttpStatus.NOT_FOUND)
-    	                .body("Application not found with ID: " + id);
-    	    } catch (Exception ex) {
-    	        return ResponseEntity
-    	                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-    	                .body("Internal server error: " + ex.getMessage());
-    	    }
+        ApplicationResponse response = applicationService.updateApplication(id, updateStatusRequest);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/check/{jobId}")
-    public ResponseEntity<?> checkApplicationExists(@PathVariable Long jobId, Authentication authentication) {
-        try {
-            Long userId = Long.valueOf(authentication.getName());
-            boolean hasApplied = applicationService.hasUserAppliedForJob(jobId, userId);
-            return ResponseEntity.ok(java.util.Map.of("hasApplied", hasApplied));
-        } catch (Exception ex) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Unable to check application status");
-        }
+    public ResponseEntity<java.util.Map<String, Boolean>> checkApplicationExists(@PathVariable Long jobId,
+            Authentication authentication) {
+        Long userId = Long.valueOf(authentication.getName());
+        boolean hasApplied = applicationService.hasUserAppliedForJob(jobId, userId);
+        return ResponseEntity.ok(java.util.Map.of("hasApplied", hasApplied));
     }
 }

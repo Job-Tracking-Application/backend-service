@@ -24,7 +24,7 @@ public class RecruiterJobController {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        
+
         if (auth == null || !auth.isAuthenticated()) {
             return null;
         }
@@ -46,20 +46,14 @@ public class RecruiterJobController {
 
     @GetMapping("/my-jobs")
     public ResponseEntity<ApiResponse<List<JobWithSkillsResponse>>> getMyJobs() {
-        try {
-            Long recruiterId = getCurrentUserId();
-            if (recruiterId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>(false, "User not authenticated", null));
-            }
-
-            List<JobWithSkillsResponse> jobs = jobService.getJobsByRecruiterWithSkills(recruiterId);
-            return ResponseEntity.ok(
-                    new ApiResponse<>(true, "Recruiter jobs fetched successfully", jobs)
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "Error fetching recruiter jobs: " + e.getMessage(), null));
+        Long recruiterId = getCurrentUserId();
+        if (recruiterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "User not authenticated", null));
         }
+
+        List<JobWithSkillsResponse> jobs = jobService.getJobsByRecruiterWithSkills(recruiterId);
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Recruiter jobs fetched successfully", jobs));
     }
 }

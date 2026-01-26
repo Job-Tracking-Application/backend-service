@@ -22,14 +22,8 @@ public class SkillController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Skill>>> getAllSkills() {
-        try {
-            List<Skill> skills = skillService.getAllSkills();
-            return ResponseEntity.ok(
-                new ApiResponse<>(true, "Skills fetched successfully", skills)
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(500)
-                .body(new ApiResponse<>(false, "Error fetching skills: " + e.getMessage(), null));
-        }
+        List<Skill> skills = skillService.getAllSkills();
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Skills fetched successfully", skills));
     }
 }

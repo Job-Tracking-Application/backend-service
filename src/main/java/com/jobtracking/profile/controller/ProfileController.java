@@ -1,6 +1,5 @@
 package com.jobtracking.profile.controller;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,100 +24,40 @@ public class ProfileController {
 	private final ProfileService profileService;
 
 	@GetMapping("/jobseeker")
-	public ResponseEntity<?> getProfile(Authentication authentication) {
-
-		try {
-			Long userId = Long.valueOf(authentication.getName());
-			ProfileResponse profile = profileService.getJobSeekerProfile(userId);
-			return ResponseEntity.ok(profile);
-
-		} catch (NumberFormatException ex) {
-			return ResponseEntity
-					.status(HttpStatus.BAD_REQUEST)
-					.body("Invalid user id");
-
-		} catch (RuntimeException ex) {
-			// user not found / profile not found
-			return ResponseEntity
-					.status(HttpStatus.NOT_FOUND)
-					.body(ex.getMessage());
-
-		}
+	public ResponseEntity<ProfileResponse> getProfile(Authentication authentication) {
+		Long userId = Long.valueOf(authentication.getName());
+		ProfileResponse profile = profileService.getJobSeekerProfile(userId);
+		return ResponseEntity.ok(profile);
 	}
 
 	// 🔹 UPDATE jobseeker profile
 	@PutMapping("/jobseeker")
-	public ResponseEntity<?> updateProfile(
+	public ResponseEntity<String> updateProfile(
 			Authentication authentication,
 			@Valid @RequestBody UpdateProfileRequest request) {
-
-		try {
-			Long userId = Long.valueOf(authentication.getName());
-			profileService.updateJobSeekerProfile(userId, request);
-			return ResponseEntity.ok("Profile updated successfully");
-
-		} catch (NumberFormatException ex) {
-			return ResponseEntity
-					.status(HttpStatus.BAD_REQUEST)
-					.body("Invalid user id");
-
-		} catch (RuntimeException ex) {
-			// user not found or profile error
-			return ResponseEntity
-					.status(HttpStatus.BAD_REQUEST)
-					.body(ex.getMessage());
-
-		}
+		Long userId = Long.valueOf(authentication.getName());
+		profileService.updateJobSeekerProfile(userId, request);
+		return ResponseEntity.ok("Profile updated successfully");
 	}
-	
+
 	@GetMapping("/recruiter")
-	public ResponseEntity<?> getRecruiterProfile(Authentication authentication) {
-
-		try {
-			Long userId = Long.valueOf(authentication.getName());
-			RecruiterProfileResponse profile = profileService.getRecruiterProfile(userId);
-			return ResponseEntity.ok(profile);
-
-		} catch (NumberFormatException ex) {
-			return ResponseEntity
-					.status(HttpStatus.BAD_REQUEST)
-					.body("Invalid user id");
-
-		} catch (RuntimeException ex) {
-			// user not found / profile not found
-			return ResponseEntity
-					.status(HttpStatus.NOT_FOUND)
-					.body(ex.getMessage());
-
-		}
+	public ResponseEntity<RecruiterProfileResponse> getRecruiterProfile(Authentication authentication) {
+		Long userId = Long.valueOf(authentication.getName());
+		RecruiterProfileResponse profile = profileService.getRecruiterProfile(userId);
+		return ResponseEntity.ok(profile);
 	}
 
 	// 🔹 UPDATE recruiter profile
 	@PutMapping("/recruiter")
-	public ResponseEntity<?> updateRecruiterProfile(
+	public ResponseEntity<RecruiterProfileResponse> updateRecruiterProfile(
 			Authentication authentication,
 			@RequestBody UpdateRecruiterProfileRequest request) {
+		Long userId = Long.valueOf(authentication.getName());
+		profileService.updateRecruiterProfile(userId, request);
 
-		try {
-			Long userId = Long.valueOf(authentication.getName());
-			profileService.updateRecruiterProfile(userId, request);
-			
-			// Return the updated profile data instead of just a success message
-			RecruiterProfileResponse updatedProfile = profileService.getRecruiterProfile(userId);
-			return ResponseEntity.ok(updatedProfile);
-
-		} catch (NumberFormatException ex) {
-			return ResponseEntity
-					.status(HttpStatus.BAD_REQUEST)
-					.body("Invalid user id");
-
-		} catch (RuntimeException ex) {
-			// user not found or profile error
-			return ResponseEntity
-					.status(HttpStatus.BAD_REQUEST)
-					.body(ex.getMessage());
-
-		}
+		// Return the updated profile data instead of just a success message
+		RecruiterProfileResponse updatedProfile = profileService.getRecruiterProfile(userId);
+		return ResponseEntity.ok(updatedProfile);
 	}
 
 }

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jobtracking.audit.service.AuditLogService;
+import com.jobtracking.common.exception.ResourceNotFoundException;
 import com.jobtracking.auth.entity.User;
 import com.jobtracking.auth.repository.UserRepository;
 import com.jobtracking.profile.dto.EducationDTO;
@@ -20,7 +21,8 @@ import com.jobtracking.profile.repository.JobSeekerProfileRepository;
 import com.jobtracking.profile.repository.JobSeekerSkillsRepository;
 import com.jobtracking.profile.repository.RecruiterProfileRepository;
 import com.jobtracking.profile.repository.SkillRepository;
-
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
@@ -37,8 +39,8 @@ public class ProfileServiceImpl implements ProfileService {
 	private final AuditLogService auditLogService;
 
 	public ProfileResponse getJobSeekerProfile(Long id) {
-		User user = userRepo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-		
+		User user = userRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
 		// Get or create profile if it doesn't exist
 		JobSeekerProfile profile = jobSeekerProfileRepo.findByUserId(id)
 				.orElseGet(() -> {
@@ -47,7 +49,7 @@ public class ProfileServiceImpl implements ProfileService {
 					newProfile.setUser(user);
 					return jobSeekerProfileRepo.save(newProfile);
 				});
-		
+
 		// Fetch skills with error handling
 		List<String> skills;
 		try {
@@ -56,7 +58,7 @@ public class ProfileServiceImpl implements ProfileService {
 		} catch (Exception e) {
 			skills = java.util.List.of(); // Set empty list on error
 		}
-		
+
 		// Education (JSON string → Object)
 		EducationDTO education = null;
 		if (profile.getEducation() != null && !profile.getEducation().trim().isEmpty()) {
@@ -67,7 +69,7 @@ public class ProfileServiceImpl implements ProfileService {
 				education = null;
 			}
 		}
-		
+
 		// Return record using constructor - include phone field from User entity
 		return new ProfileResponse(
 				user.getFullname(),
@@ -77,15 +79,14 @@ public class ProfileServiceImpl implements ProfileService {
 				skills,
 				profile.getResumeLink(),
 				profile.getBioEn(),
-				education
-		);
+				education);
 	}
 
 	@Override
 	public void updateJobSeekerProfile(Long userId, UpdateProfileRequest req) {
 		// 1️⃣ Fetch user
 		User user = userRepo.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 		user.setFullname(req.fullName());
 		if (req.phone() != null) {
@@ -113,23 +114,23 @@ public class ProfileServiceImpl implements ProfileService {
 			} else {
 				// For plain text education, try to parse it intelligently
 				String educationText = req.education().trim();
-				
+
 				// Try to extract year from parentheses at the end
 				String degree = educationText;
 				String college = "";
 				int year = 0;
-				
+
 				// Look for year in parentheses like "(2020)"
 				if (educationText.matches(".*\\(\\d{4}\\).*")) {
-					java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(".*\\((\\d{4})\\)");
-					java.util.regex.Matcher matcher = pattern.matcher(educationText);
+					Pattern pattern = java.util.regex.Pattern.compile(".*\\((\\d{4})\\)");
+					Matcher matcher = pattern.matcher(educationText);
 					if (matcher.find()) {
 						year = Integer.parseInt(matcher.group(1));
 						// Remove the year part from the degree
 						degree = educationText.replaceAll("\\s*\\(\\d{4}\\)", "").trim();
 					}
 				}
-				
+
 				// Try to extract college using "from" keyword
 				if (degree.toLowerCase().contains(" from ")) {
 					String[] parts = degree.split("(?i)\\s+from\\s+", 2);
@@ -138,14 +139,15 @@ public class ProfileServiceImpl implements ProfileService {
 						college = parts[1].trim();
 					}
 				}
-				
+
 				try {
 					ObjectMapper mapper = new ObjectMapper();
 					EducationDTO educationDTO = new EducationDTO(degree, college, year);
 					profile.setEducation(mapper.writeValueAsString(educationDTO));
 				} catch (Exception e) {
 					// Fallback: store as plain text in a simple JSON structure
-					profile.setEducation("{\"degree\":\"" + req.education().replace("\"", "\\\"") + "\",\"college\":\"\",\"year\":0}");
+					profile.setEducation("{\"degree\":\"" + req.education().replace("\"", "\\\"")
+							+ "\",\"college\":\"\",\"year\":0}");
 				}
 			}
 		}
@@ -174,15 +176,15 @@ public class ProfileServiceImpl implements ProfileService {
 				}
 			}
 		}
-		
+
 		// Log profile update
 		auditLogService.log("PROFILE", profile.getId(), "UPDATED", userId);
 	}
 
 	@Override
 	public RecruiterProfileResponse getRecruiterProfile(Long userId) {
-		User user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-		
+		User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
 		// Get or create profile if it doesn't exist
 		RecruiterProfile profile = recruiterProfileRepo.findByUserId(userId)
 				.orElseGet(() -> {
@@ -191,7 +193,7 @@ public class ProfileServiceImpl implements ProfileService {
 					newProfile.setUser(user);
 					return recruiterProfileRepo.save(newProfile);
 				});
-		
+
 		// Return record using constructor
 		return new RecruiterProfileResponse(
 				user.getFullname(),
@@ -201,15 +203,14 @@ public class ProfileServiceImpl implements ProfileService {
 				profile.getPhone(),
 				profile.getLinkedinUrl(),
 				profile.getYearsExperience(),
-				profile.getSpecialization()
-		);
+				profile.getSpecialization());
 	}
 
 	@Override
 	public void updateRecruiterProfile(Long userId, UpdateRecruiterProfileRequest req) {
 		// 1️⃣ Fetch user
 		User user = userRepo.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 		user.setFullname(req.fullName());
 		userRepo.save(user);
@@ -230,7 +231,7 @@ public class ProfileServiceImpl implements ProfileService {
 
 		// Save profile
 		profile = recruiterProfileRepo.save(profile);
-		
+
 		// Log profile update
 		auditLogService.log("RECRUITER_PROFILE", profile.getId(), "UPDATED", userId);
 	}

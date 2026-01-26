@@ -28,7 +28,7 @@ public class JobController {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        
+
         if (auth == null || !auth.isAuthenticated()) {
             return null;
         }
@@ -53,63 +53,45 @@ public class JobController {
             @RequestBody Job job,
             @RequestParam(required = false) List<Long> skillIds) {
 
-        try {
-            Long recruiterId = getCurrentUserId();
-            if (recruiterId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>(false, "User not authenticated", null));
-            }
-
-            // Validate that the recruiter owns the company
-            if (!isRecruiterCompanyValid(recruiterId, job.getCompanyId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ApiResponse<>(false, "You can only create jobs for your own company", null));
-            }
-
-            job.setRecruiterUserId(recruiterId);
-
-            if (skillIds == null) {
-                skillIds = List.of();
-            }
-
-            Job savedJob = jobService.createJob(job, skillIds);
-            
-            // Convert to DTO to avoid circular reference
-            JobWithSkillsResponse response = jobService.getJobWithSkillsById(savedJob.getId());
-
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ApiResponse<>(true, "Job created successfully", response));
-                    
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "Error creating job: " + e.getMessage(), null));
+        Long recruiterId = getCurrentUserId();
+        if (recruiterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "User not authenticated", null));
         }
+
+        // Validate that the recruiter owns the company
+        if (!isRecruiterCompanyValid(recruiterId, job.getCompanyId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse<>(false, "You can only create jobs for your own company", null));
+        }
+
+        job.setRecruiterUserId(recruiterId);
+
+        if (skillIds == null) {
+            skillIds = List.of();
+        }
+
+        Job savedJob = jobService.createJob(job, skillIds);
+
+        // Convert to DTO to avoid circular reference
+        JobWithSkillsResponse response = jobService.getJobWithSkillsById(savedJob.getId());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, "Job created successfully", response));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<JobWithSkillsResponse>>> getAllJobs() {
-        try {
-            List<JobWithSkillsResponse> jobs = jobService.getAllJobsWithSkills();
-            return ResponseEntity.ok(
-                    new ApiResponse<>(true, "Jobs fetched successfully", jobs)
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "Error fetching jobs: " + e.getMessage(), null));
-        }
+        List<JobWithSkillsResponse> jobs = jobService.getAllJobsWithSkills();
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Jobs fetched successfully", jobs));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<JobWithSkillsResponse>> getJob(@PathVariable Long id) {
-        try {
-            JobWithSkillsResponse job = jobService.getJobWithSkillsById(id);
-            return ResponseEntity.ok(
-                    new ApiResponse<>(true, "Job fetched successfully", job)
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponse<>(false, "Job not found: " + e.getMessage(), null));
-        }
+        JobWithSkillsResponse job = jobService.getJobWithSkillsById(id);
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Job fetched successfully", job));
     }
 
     @PutMapping("/{id}")
@@ -118,58 +100,47 @@ public class JobController {
             @RequestBody Job job,
             @RequestParam(required = false) List<Long> skillIds) {
 
-        try {
-            Long recruiterId = getCurrentUserId();
-            if (recruiterId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>(false, "User not authenticated", null));
-            }
-
-            // Validate that the recruiter owns the company
-            if (!isRecruiterCompanyValid(recruiterId, job.getCompanyId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ApiResponse<>(false, "You can only update jobs for your own company", null));
-            }
-
-            if (skillIds == null) {
-                skillIds = List.of();
-            }
-
-            Job updatedJob = jobService.updateJob(id, job, skillIds);
-            
-            // Convert to DTO to avoid circular reference
-            JobWithSkillsResponse response = jobService.getJobWithSkillsById(updatedJob.getId());
-
-            return ResponseEntity.ok(
-                    new ApiResponse<>(true, "Job updated successfully", response)
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "Error updating job: " + e.getMessage(), null));
+        Long recruiterId = getCurrentUserId();
+        if (recruiterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "User not authenticated", null));
         }
+
+        // Validate that the recruiter owns the company
+        if (!isRecruiterCompanyValid(recruiterId, job.getCompanyId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse<>(false, "You can only update jobs for your own company", null));
+        }
+
+        if (skillIds == null) {
+            skillIds = List.of();
+        }
+
+        Job updatedJob = jobService.updateJob(id, job, skillIds);
+
+        // Convert to DTO to avoid circular reference
+        JobWithSkillsResponse response = jobService.getJobWithSkillsById(updatedJob.getId());
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Job updated successfully", response));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteJob(@PathVariable Long id) {
-        try {
-            jobService.deleteJob(id);
-            return ResponseEntity.ok(
-                    new ApiResponse<>(true, "Job deleted successfully", null)
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "Error deleting job: " + e.getMessage(), null));
-        }
+        jobService.deleteJob(id);
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Job deleted successfully", null));
     }
 
     /**
-     * Validates that the recruiter owns the company they're trying to create/update a job for
+     * Validates that the recruiter owns the company they're trying to create/update
+     * a job for
      */
     private boolean isRecruiterCompanyValid(Long recruiterId, Long companyId) {
         if (companyId == null) {
             return false;
         }
-        
+
         return organizationRepository.findById(companyId)
                 .map(org -> org.getRecruiterUserId().equals(recruiterId))
                 .orElse(false);

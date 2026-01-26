@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.jobtracking.audit.service.AuditLogService;
+import com.jobtracking.common.exception.ResourceNotFoundException;
 import com.jobtracking.job.dto.JobWithSkillsResponse;
 import com.jobtracking.job.entity.Job;
 import com.jobtracking.job.repository.JobRepository;
@@ -32,10 +33,10 @@ public class JobServiceImpl implements JobService {
     public Job createJob(Job job, List<Long> skillIds) {
         // Save the job first
         Job savedJob = jobRepository.save(job);
-        
+
         // Log job creation
-        auditLogService.log("JOB", savedJob.getId(), "CREATED", savedJob.getRecruiterUserId(), 
-            "Created job: " + savedJob.getTitle());
+        auditLogService.log("JOB", savedJob.getId(), "CREATED", savedJob.getRecruiterUserId(),
+                "Created job: " + savedJob.getTitle());
 
         // Add skills if provided
         if (skillIds != null && !skillIds.isEmpty()) {
@@ -48,21 +49,21 @@ public class JobServiceImpl implements JobService {
                 System.err.println("Error adding skills to job: " + e.getMessage());
             }
         }
-        
+
         return savedJob;
     }
 
     @Override
     public Job getJobById(Long jobId) {
         return jobRepository.findByIdAndNotDeleted(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
     }
 
     @Override
     public JobWithSkillsResponse getJobWithSkillsById(Long jobId) {
         Job job = jobRepository.findByIdAndNotDeletedWithSkills(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
-        
+
         return convertToJobWithSkillsResponse(job);
     }
 
@@ -111,10 +112,10 @@ public class JobServiceImpl implements JobService {
         }
 
         Job updatedJob = jobRepository.save(existingJob);
-        
+
         // Log job update
-        auditLogService.log("JOB", updatedJob.getId(), "UPDATED", updatedJob.getRecruiterUserId(), 
-            "Updated job: " + updatedJob.getTitle());
+        auditLogService.log("JOB", updatedJob.getId(), "UPDATED", updatedJob.getRecruiterUserId(),
+                "Updated job: " + updatedJob.getTitle());
 
         return updatedJob;
     }
@@ -123,17 +124,17 @@ public class JobServiceImpl implements JobService {
     @Transactional
     public void deleteJob(Long jobId) {
         Job job = getJobById(jobId);
-        
+
         // Soft delete: set deletedAt timestamp instead of actually deleting
         job.setDeletedAt(LocalDateTime.now());
         job.setIsActive(false); // Also mark as inactive
-        
+
         jobRepository.save(job);
-        
+
         // Log job deletion (soft delete)
-        auditLogService.log("JOB", jobId, "DELETED", job.getRecruiterUserId(), 
-            "Soft deleted job: " + job.getTitle());
-        
+        auditLogService.log("JOB", jobId, "DELETED", job.getRecruiterUserId(),
+                "Soft deleted job: " + job.getTitle());
+
         // Note: Skills relationship is maintained for soft delete
     }
 
@@ -142,12 +143,12 @@ public class JobServiceImpl implements JobService {
     public void restoreJob(Long jobId) {
         // Find job including soft-deleted ones
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+
         // Restore the job
         job.setDeletedAt(null);
         job.setIsActive(true);
-        
+
         jobRepository.save(job);
     }
 
@@ -163,20 +164,20 @@ public class JobServiceImpl implements JobService {
         response.setMaxExperience(job.getMaxExperience());
         response.setJobType(job.getJobType());
         response.setCompanyId(job.getCompanyId());
-        
+
         // Fetch and set company name
         if (job.getCompanyId() != null) {
             organizationRepository.findById(job.getCompanyId())
-                .ifPresent(org -> response.setCompanyName(org.getName()));
+                    .ifPresent(org -> response.setCompanyName(org.getName()));
         }
-        
+
         response.setRecruiterUserId(job.getRecruiterUserId());
         response.setIsActive(job.getIsActive());
         response.setPostedAt(job.getPostedAt());
         response.setDeadline(job.getDeadline());
         response.setCreatedAt(job.getCreatedAt());
         response.setUpdatedAt(job.getUpdatedAt());
-        
+
         // Convert skills
         if (job.getSkills() != null) {
             List<JobWithSkillsResponse.SkillInfo> skillInfos = job.getSkills().stream()
@@ -184,8 +185,7 @@ public class JobServiceImpl implements JobService {
                     .collect(Collectors.toList());
             response.setSkills(skillInfos);
         }
-        
+
         return response;
     }
 }
-

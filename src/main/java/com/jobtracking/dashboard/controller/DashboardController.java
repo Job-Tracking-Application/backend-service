@@ -24,7 +24,7 @@ public class DashboardController {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        
+
         if (auth == null || !auth.isAuthenticated()) {
             return null;
         }
@@ -47,36 +47,26 @@ public class DashboardController {
     @GetMapping("/recruiter/stats")
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<ApiResponse<DashboardStatsResponse>> getRecruiterStats() {
-        try {
-            Long recruiterId = getCurrentUserId();
-            if (recruiterId == null) {
-                return ResponseEntity.badRequest()
-                        .body(new ApiResponse<>(false, "User not authenticated", null));
-            }
-            
-            DashboardStatsResponse stats = dashboardService.getRecruiterStats(recruiterId);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Recruiter stats retrieved successfully", stats));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse<>(false, "Error retrieving recruiter stats: " + e.getMessage(), null));
+        Long recruiterId = getCurrentUserId();
+        if (recruiterId == null) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, "User not authenticated", null));
         }
+
+        DashboardStatsResponse stats = dashboardService.getRecruiterStats(recruiterId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Recruiter stats retrieved successfully", stats));
     }
 
     @GetMapping("/jobseeker/stats")
     @PreAuthorize("hasRole('JOB_SEEKER')")
     public ResponseEntity<ApiResponse<DashboardStatsResponse>> getJobSeekerStats() {
-        try {
-            Long jobSeekerId = getCurrentUserId();
-            if (jobSeekerId == null) {
-                return ResponseEntity.badRequest()
-                        .body(new ApiResponse<>(false, "User not authenticated", null));
-            }
-            
-            DashboardStatsResponse stats = dashboardService.getJobSeekerStats(jobSeekerId);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Job seeker stats retrieved successfully", stats));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse<>(false, "Error retrieving job seeker stats: " + e.getMessage(), null));
+        Long jobSeekerId = getCurrentUserId();
+        if (jobSeekerId == null) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, "User not authenticated", null));
         }
+
+        DashboardStatsResponse stats = dashboardService.getJobSeekerStats(jobSeekerId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Job seeker stats retrieved successfully", stats));
     }
 }
