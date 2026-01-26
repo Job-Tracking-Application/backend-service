@@ -10,9 +10,9 @@ import com.jobtracking.auth.dto.LoginResponse;
 import com.jobtracking.auth.dto.RegisterRequest;
 import com.jobtracking.auth.dto.SecureUserResponse;
 import com.jobtracking.auth.entity.User;
+import com.jobtracking.auth.repository.UserRepository;
 import com.jobtracking.common.utils.DataMaskingUtil;
 import com.jobtracking.config.JwtUtil;
-import com.jobtracking.auth.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -48,24 +48,27 @@ public class AuthService {
 		// Log user registration
 		auditLogService.log("USER", user.getId(), "REGISTERED", user.getId());
 	}
-
-	public LoginResponse login(LoginRequest request) {
-
-		User user = userRepository.findByEmail(request.getEmail())
-				.orElseThrow(() -> new RuntimeException("Invalid credentials"));
-
-		if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-			throw new RuntimeException("Invalid credentials");
-		}
-
-		String token = jwtUtil.generateToken(user.getId(), user.getRoleId());
-
-		// Log successful login
-		auditLogService.log("USER", user.getId(), "LOGIN", user.getId());
-
-		return new LoginResponse(token, user.getId(), user.getRoleId(), user.getFullname(), user.getEmail());
-	}
 	
+       public LoginResponse login(LoginRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Invalid credentials");
+        }
+
+        if (user.getActive() != null && !user.getActive()) {
+            throw new RuntimeException("User account is deactivated");
+        }
+
+        String token = jwtUtil.generateToken(user.getId(), user.getRoleId());
+
+        // Log successful login
+        auditLogService.log("USER", user.getId(), "LOGIN", user.getId());
+
+        return new LoginResponse(token, user.getId(), user.getRoleId(), user.getFullname(), user.getEmail());
+    }
+
 	public SecureUserResponse getCurrentUser(Authentication authentication) {
 		// Extract user ID from JWT token (stored in authentication subject)
 		String userIdStr = authentication.getName();
