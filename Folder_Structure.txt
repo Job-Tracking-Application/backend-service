@@ -1,0 +1,122 @@
+com.jobtracking
+├── admin
+│   ├── controller
+│   │   └── AdminController.java
+│   ├── service
+│   │   └── AdminService.java
+│   └── dto
+│       ├── AdminStatsResponse.java
+│       ├── AdminUserResponse.java
+│       └── AdminJobResponse.java
+        └── AdminCompanyResponse.java
+│
+├── application
+│   ├── controller
+│   │   └── ApplicationController.java
+│   ├── service
+│   │   └── ApplicationService.java
+│   ├── dto
+│   │   ├── ApplyJobRequest.java
+│   │   ├── ApplicationResponse.java
+│   │   └── UpdateStatusRequest.java
+│   ├── entity
+│   │   └── Application.java
+│   └── repository
+│       └── ApplicationRepository.java
+│
+├── audit
+│   ├── entity
+│   │   └── AuditLog.java
+│   ├── repository
+│   │   └── AuditLogRepository.java
+│   └── service
+│       └── AuditLogService.java
+│
+├── auth
+│   ├── controller
+│   │   └── AuthController.java
+│   ├── service
+│   │   └── AuthService.java
+│   ├── dto
+│   │   ├── RegisterRequest.java
+│   │   ├── LoginRequest.java
+│   │   └── LoginResponse.java
+│   ├── entity
+│   │   └── User.java
+│   └── repository
+│       └── UserRepository.java
+│
+├── common
+│   ├── dto
+│   │   └── PageResponse.java
+│   ├── enums
+│   │   ├── Role.java
+│   │   └── ApplicationStatus.java
+│   ├── exception
+│   │   ├── GlobalExceptionHandler.java
+│   │   └── CustomException.java
+│   ├── response
+│   │   └── ApiResponse.java
+│   ├── utils
+│   │   ├── RoleMapper.java
+│   │   └── SecurityUtil.java
+│   └── entity
+│       └── Skill.java
+│
+├── config
+│   ├── SecurityConfig.java
+│   ├── JwtUtil.java
+│   ├── JwtAuthenticationFilter.java
+│   ├── CorsConfig.java
+│   └── SwaggerConfig.java
+│
+├── job
+│   ├── controller
+│   │   └── JobController.java
+│   ├── service
+│   │   └── JobService.java
+│   ├── dto
+│   │   ├── CreateJobRequest.java
+│   │   ├── JobResponse.java
+│   │   └── JobListResponse.java
+│   ├── entity
+│   │   ├── Job.java
+│   │   └── JobSkill.java
+│   └── repository
+│       └── JobRepository.java
+│
+├── organization
+│   ├── controller
+│   │   └── OrganizationController.java
+│   ├── service
+│   │   └── OrganizationService.java
+│   ├── dto
+│   │   ├── OrganizationRequest.java
+│   │   └── OrganizationResponse.java
+│   ├── entity
+│   │   └── Organization.java
+│   └── repository
+│       └── OrganizationRepository.java
+│
+├── profile
+│   ├── controller
+│   │   └── ProfileController.java
+│   ├── service
+│   │   └── ProfileService.java
+│   ├── dto
+│   │   ├── ProfileResponse.java
+│   │   └── UpdateProfileRequest.java
+│   ├── entity
+│   │   ├── JobSeekerProfile.java
+│   │   ├── RecruiterProfile.java
+│   │   └── JobSeekerSkill.java
+│   └── repository
+│       ├── JobSeekerProfileRepository.java
+│       ├── RecruiterProfileRepository.java
+│       └── JobSeekerSkillRepository.java
+│
+└── report
+    ├── controller
+    │   └── ReportController.java
+    └── service
+        └── ReportService.java

@@ -1,0 +1,95 @@
+package com.jobtracking.job.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import com.jobtracking.profile.entity.Skill;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = "jobs")
+@Getter
+@Setter
+public class Job {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 200)
+    private String title;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(length = 100)
+    private String location;
+
+    @Column(name = "min_salary")
+    private Double minSalary;
+
+    @Column(name = "max_salary")
+    private Double maxSalary;
+
+    @Column(name = "min_experience")
+    private Integer minExperience;
+
+    @Column(name = "max_experience")
+    private Integer maxExperience;
+
+    @Column(name = "job_type", length = 50)
+    private String jobType;
+
+    @Column(name = "company_id")
+    private Long companyId;
+
+    @Column(name = "recruiter_id", nullable = false)
+    private Long recruiterUserId;
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+    
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "posted_at")
+    private LocalDateTime postedAt;
+
+    @Column(name = "expiry_date")
+    private LocalDateTime deadline;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(columnDefinition = "json")
+    private String extension;
+
+    // Many-to-Many relationship with Skills through job_skills table
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "job_skills",
+        joinColumns = @JoinColumn(name = "job_id"),
+        inverseJoinColumns = @JoinColumn(name = "skill_id")
+    )
+    private List<Skill> skills;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (postedAt == null) {
+            postedAt = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+}
