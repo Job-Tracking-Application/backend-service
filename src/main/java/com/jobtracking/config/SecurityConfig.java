@@ -20,53 +20,99 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    }
+        public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+                this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable()) // Required for POST APIs
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(
-                                "/actuator/health",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/webjars/**")
-                        .permitAll()
-                        .anyRequest().authenticated()) // Everything else protected
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                http
+                                // CORS
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-        return http.build();
-    }
+                                // Disable CSRF (JWT based)
+                                .csrf(csrf -> csrf.disable())
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+                                // Disable default auth
+                                .httpBasic(httpBasic -> httpBasic.disable())
+                                .formLogin(form -> form.disable())
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
+                                // Stateless session
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:3000"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+                                // Authorization rules
+                                .authorizeHttpRequests(auth -> auth
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
+                                                // Preflight
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-        return source;
-    }
+                                                // Auth
+                                                .requestMatchers("/auth/register", "/auth/login").permitAll()
+                                                .requestMatchers("/auth/me").authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/organizations").permitAll()
+                                                .requestMatchers("/recruiter/jobs/**").hasRole("RECRUITER")
+                                                .requestMatchers(HttpMethod.GET, "/jobs/**").authenticated() 
+                                                .requestMatchers("/jobs/**").hasRole("RECRUITER")
+                                                .requestMatchers("/organizations/**").hasRole("RECRUITER")
+                                                .requestMatchers("/dashboard/**").authenticated()
+                                                .requestMatchers("/admin/**").hasRole("ADMIN")
+                                                .requestMatchers("/applications/job/**").hasRole("RECRUITER")
+                                                .requestMatchers("/applications/manage/**").hasRole("RECRUITER")
+                                                .requestMatchers("/applications/me").hasRole("JOB_SEEKER")
+                                                .requestMatchers("/applications/my").hasRole("JOB_SEEKER")
+                                                .requestMatchers("/applications/check/**").hasRole("JOB_SEEKER")
+                                                .requestMatchers(HttpMethod.POST, "/applications/**")
+                                                .hasRole("JOB_SEEKER") // Job seekers can apply for jobs
+                                                .requestMatchers("/profile/jobseeker").hasRole("JOB_SEEKER")
+                                                .requestMatchers("/profile/recruiter").hasRole("RECRUITER")
+                                                .requestMatchers("/profile/**").authenticated()
+                                                .requestMatchers(
+                                                                "/v3/api-docs/**",
+                                                                "/swagger-ui/**",
+                                                                "/swagger-ui.html",
+                                                                "/webjars/**")
+                                                .permitAll()
+                                                .anyRequest().authenticated()) // Everything else protected
+
+                                // JWT filter
+                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+                return http.build();
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
+
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+
+                CorsConfiguration config = new CorsConfiguration();
+
+                config.setAllowedOrigins(List.of(
+                                "http://localhost:5173",
+                                "http://localhost:3000",
+                                "https://jobsync.vivekbhosale.in",
+                                "http://jobsync.vivekbhosale.in"));
+
+                config.setAllowedMethods(List.of(
+                                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+
+                config.setAllowedHeaders(List.of(
+                                "Authorization",
+                                "Content-Type",
+                                "Accept"));
+
+                config.setAllowCredentials(true);
+
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", config);
+
+                return source;
+        }
 }

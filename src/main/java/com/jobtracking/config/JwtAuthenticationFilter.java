@@ -25,11 +25,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtUtil = jwtUtil;
     }
 
+    // 🔥 Skip JWT filter for auth APIs
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/api/auth/");
+    }
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
 
@@ -46,17 +54,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Integer roleId = claims.get("roleId", Integer.class);
 
             String roleName = RoleMapper.mapRoleIdToRoleName(roleId);
-            List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    userId.toString(), // Use String for consistency with authentication.getName()
-                    null,
-                    authorities);
+            List<GrantedAuthority> authorities =
+                    List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            userId.toString(),
+                            null,
+                            authorities
+                    );
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            
+
         } catch (Exception e) {
-            // Clear any partial authentication
             SecurityContextHolder.clearContext();
         }
 
