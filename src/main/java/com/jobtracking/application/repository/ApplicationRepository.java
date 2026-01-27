@@ -16,7 +16,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     
     @Query("""
        SELECT a FROM Application a
-       WHERE (:status IS NULL OR a.status = :status)
+       WHERE a.deletedAt IS NULL 
+       AND (:status IS NULL OR a.status = :status)
     """)
     Page<Application> filterApplications(
             @Param("status") ApplicationStatus status,
@@ -24,21 +25,26 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     );
     
     // Methods from profile backend API
-    List<Application> findByJobId(Long jobId);
+    @Query("SELECT a FROM Application a WHERE a.job.id = :jobId AND a.deletedAt IS NULL")
+    List<Application> findByJobId(@Param("jobId") Long jobId);
     
-    @Query("SELECT a FROM Application a WHERE a.user.id = :userId ORDER BY a.appliedAt DESC")
+    @Query("SELECT a FROM Application a WHERE a.user.id = :userId AND a.deletedAt IS NULL ORDER BY a.appliedAt DESC")
     List<Application> findByUserId(@Param("userId") Long userId);
     
-    boolean existsByJobIdAndUserId(Long jobId, Long userId);
+    @Query("SELECT COUNT(a) > 0 FROM Application a WHERE a.job.id = :jobId AND a.user.id = :userId AND a.deletedAt IS NULL")
+    boolean existsByJobIdAndUserId(@Param("jobId") Long jobId, @Param("userId") Long userId);
     
     // Dashboard stats methods
-    long countByUserId(Long jobSeekerId);
-    long countByUserIdAndStatus(Long jobSeekerId, ApplicationStatus status);
+    @Query("SELECT COUNT(a) FROM Application a WHERE a.user.id = :jobSeekerId AND a.deletedAt IS NULL")
+    long countByUserId(@Param("jobSeekerId") Long jobSeekerId);
+    
+    @Query("SELECT COUNT(a) FROM Application a WHERE a.user.id = :jobSeekerId AND a.status = :status AND a.deletedAt IS NULL")
+    long countByUserIdAndStatus(@Param("jobSeekerId") Long jobSeekerId, @Param("status") ApplicationStatus status);
     
     @Query("""
         SELECT COUNT(a) FROM Application a 
         JOIN a.job j 
-        WHERE j.recruiterUserId = :recruiterId AND a.status = :status
+        WHERE j.recruiterUserId = :recruiterId AND a.status = :status AND a.deletedAt IS NULL
     """)
     long countApplicationsForRecruiterByStatus(@Param("recruiterId") Long recruiterId, @Param("status") ApplicationStatus status);
 }

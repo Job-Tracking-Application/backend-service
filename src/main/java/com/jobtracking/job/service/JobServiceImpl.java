@@ -11,7 +11,6 @@ import com.jobtracking.audit.service.AuditLogService;
 import com.jobtracking.job.dto.JobWithSkillsResponse;
 import com.jobtracking.job.entity.Job;
 import com.jobtracking.job.repository.JobRepository;
-import com.jobtracking.organization.entity.Organization;
 import com.jobtracking.organization.repository.OrganizationRepository;
 import com.jobtracking.profile.entity.Skill;
 import com.jobtracking.profile.repository.SkillRepository;

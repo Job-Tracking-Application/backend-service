@@ -176,6 +176,11 @@ public class AdminService {
 		Application application = appRepo.findById(id)
 				.orElseThrow(() -> new RuntimeException("Application not found"));
 		
+		// Check if application is soft deleted
+		if (application.getDeletedAt() != null) {
+			throw new RuntimeException("Application has been deleted");
+		}
+		
 		final Map<Long, String> jobTitles = jobRepo.findAll().stream().collect(
 				Collectors.toMap(Job::getId, Job::getTitle));
 		final Map<Long, String> userNames = userRepo.findAll().stream().collect(
@@ -197,7 +202,10 @@ public class AdminService {
 		Application application = appRepo.findById(applicationId)
 				.orElseThrow(() -> new RuntimeException("Application not found"));
 		
-		appRepo.delete(application);
-		auditLogService.log("APPLICATION", applicationId, "ADMIN_DELETE", adminId);
+		// Soft delete: set deletedAt timestamp instead of hard delete
+		application.setDeletedAt(LocalDateTime.now());
+		appRepo.save(application);
+		
+		auditLogService.log("APPLICATION", applicationId, "ADMIN_SOFT_DELETE", adminId);
 	}
 }

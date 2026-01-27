@@ -42,6 +42,9 @@ public class Application {
     @Column(name = "completion_datetime")
     private LocalDateTime completionDatetime;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Column(columnDefinition = "json")
     private String extension;
 
