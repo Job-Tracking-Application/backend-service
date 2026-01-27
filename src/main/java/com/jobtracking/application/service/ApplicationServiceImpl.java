@@ -1,6 +1,7 @@
 package com.jobtracking.application.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -184,6 +185,11 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public boolean hasUserAppliedForJob(Long jobId, Long userId) {
         return applicationRepository.existsByJobIdAndUserId(jobId, userId);
+    }
+
+    @Override
+    public Optional<Application> getApplicationById(Long id) {
+        return applicationRepository.findById(id);
     }
 
     private ApplicationResponse mapToApplicationResponse(Application application) {

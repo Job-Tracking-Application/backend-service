@@ -2,17 +2,18 @@ package com.jobtracking.application.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.jobtracking.application.entity.Application;
 import com.jobtracking.application.enums.ApplicationStatus;
+import com.jobtracking.common.repository.SoftDeleteRepository;
+
 import java.util.List;
 
 @Repository
-public interface ApplicationRepository extends JpaRepository<Application, Long> {
+public interface ApplicationRepository extends SoftDeleteRepository<Application> {
     
     @Query("""
        SELECT a FROM Application a
@@ -25,7 +26,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     );
     
     // Methods from profile backend API
-    @Query("SELECT a FROM Application a WHERE a.job.id = :jobId AND a.deletedAt IS NULL")
+    @Query("SELECT a FROM Application a WHERE a.job.id = :jobId AND a.deletedAt IS NULL ORDER BY a.appliedAt DESC")
     List<Application> findByJobId(@Param("jobId") Long jobId);
     
     @Query("SELECT a FROM Application a WHERE a.user.id = :userId AND a.deletedAt IS NULL ORDER BY a.appliedAt DESC")
@@ -47,4 +48,25 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
         WHERE j.recruiterUserId = :recruiterId AND a.status = :status AND a.deletedAt IS NULL
     """)
     long countApplicationsForRecruiterByStatus(@Param("recruiterId") Long recruiterId, @Param("status") ApplicationStatus status);
+    
+    // Count applications by status (excluding soft-deleted)
+    @Query("SELECT COUNT(a) FROM Application a WHERE a.status = :status AND a.deletedAt IS NULL")
+    long countByStatus(@Param("status") ApplicationStatus status);
+    
+    // Find applications by recruiter (through job relationship)
+    @Query("""
+        SELECT a FROM Application a 
+        JOIN a.job j 
+        WHERE j.recruiterUserId = :recruiterId AND a.deletedAt IS NULL 
+        ORDER BY a.appliedAt DESC
+    """)
+    List<Application> findByRecruiterUserId(@Param("recruiterId") Long recruiterId);
+    
+    // Count applications by recruiter
+    @Query("""
+        SELECT COUNT(a) FROM Application a 
+        JOIN a.job j 
+        WHERE j.recruiterUserId = :recruiterId AND a.deletedAt IS NULL
+    """)
+    long countByRecruiterUserId(@Param("recruiterId") Long recruiterId);
 }

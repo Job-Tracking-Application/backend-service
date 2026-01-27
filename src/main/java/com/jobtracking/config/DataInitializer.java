@@ -273,7 +273,7 @@ public class DataInitializer implements CommandLineRunner {
                         Application app2 = new Application();
                         app2.setUser(jobSeeker);
                         app2.setJob(job2);
-                        app2.setStatus(ApplicationStatus.SHORTLISTED);
+                        app2.setStatus(ApplicationStatus.INTERVIEWED);
                         app2.setResumePath("https://example.com/resume-link");
                         app2.setCoverLetter("I have extensive experience with React and would love to contribute to your frontend team.");
                         applicationRepository.save(app2);

@@ -5,8 +5,8 @@ import jakarta.validation.constraints.Pattern;
 
 public record UpdateStatusRequest(
     @NotBlank(message = "Status is required")
-    @Pattern(regexp = "APPLIED|SHORTLISTED|REJECTED|HIRED", 
-             message = "Status must be one of: APPLIED, SHORTLISTED, REJECTED, HIRED")
+    @Pattern(regexp = "APPLIED|UNDER_REVIEW|INTERVIEWED|SHORTLISTED|REJECTED|HIRED|PENDING", 
+             message = "Status must be one of: APPLIED, UNDER_REVIEW, INTERVIEWED, SHORTLISTED, REJECTED, HIRED, PENDING")
     String status
 ) {
 }

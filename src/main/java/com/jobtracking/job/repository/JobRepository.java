@@ -4,18 +4,19 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.jobtracking.job.entity.Job;
+import com.jobtracking.common.repository.SoftDeleteRepository;
 
 @Repository
-public interface JobRepository extends JpaRepository<Job, Long> {
+public interface JobRepository extends SoftDeleteRepository<Job> {
     
     // Count active jobs for a recruiter (excluding soft-deleted)
-    long countByRecruiterUserIdAndIsActiveTrueAndDeletedAtIsNull(Long recruiterId);
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.recruiterUserId = :recruiterId AND j.isActive = true AND j.deletedAt IS NULL")
+    long countByRecruiterUserIdAndIsActiveTrueAndDeletedAtIsNull(@Param("recruiterId") Long recruiterId);
     
     // Find jobs by recruiter (excluding soft-deleted) - Latest first
     @Query("SELECT j FROM Job j WHERE j.recruiterUserId = :recruiterId AND j.deletedAt IS NULL ORDER BY j.postedAt DESC, j.createdAt DESC")
@@ -35,12 +36,20 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     @Query("SELECT j FROM Job j WHERE j.deletedAt IS NULL ORDER BY j.postedAt DESC, j.createdAt DESC")
     List<Job> findByDeletedAtIsNullWithSkills();
     
-    // Find job by ID (excluding soft-deleted)
-    @Query("SELECT j FROM Job j WHERE j.id = :id AND j.deletedAt IS NULL")
-    Optional<Job> findByIdAndNotDeleted(@Param("id") Long id);
-    
     // Find job by ID with skills (excluding soft-deleted)
     @EntityGraph(attributePaths = {"skills"})
     @Query("SELECT j FROM Job j WHERE j.id = :id AND j.deletedAt IS NULL")
     Optional<Job> findByIdAndNotDeletedWithSkills(@Param("id") Long id);
+    
+    // Count active jobs (excluding soft-deleted)
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.isActive = true AND j.deletedAt IS NULL")
+    long countByIsActiveTrueAndDeletedAtIsNull();
+    
+    // Find jobs by company ID (excluding soft-deleted)
+    @Query("SELECT j FROM Job j WHERE j.companyId = :companyId AND j.deletedAt IS NULL ORDER BY j.postedAt DESC")
+    List<Job> findByCompanyIdAndDeletedAtIsNull(@Param("companyId") Long companyId);
+    
+    // Count jobs by company ID (excluding soft-deleted)
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.companyId = :companyId AND j.deletedAt IS NULL")
+    long countByCompanyIdAndDeletedAtIsNull(@Param("companyId") Long companyId);
 }

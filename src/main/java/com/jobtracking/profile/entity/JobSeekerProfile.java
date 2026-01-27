@@ -1,16 +1,13 @@
 package com.jobtracking.profile.entity;
 
-
 import java.util.List;
 
 import com.jobtracking.auth.entity.User;
+import com.jobtracking.common.entity.BaseEntity;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -22,11 +19,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name ="jobseeker_profile")
-public class JobSeekerProfile {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+public class JobSeekerProfile extends BaseEntity {
 
     @Column(name = "resume_link", length = 500)
     private String resumeLink;
@@ -51,5 +44,4 @@ public class JobSeekerProfile {
     
     @OneToMany(mappedBy = "jobSeekerProfile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JobSeekerSkill> skills;
-
 }

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import com.jobtracking.profile.entity.Skill;
+import com.jobtracking.common.entity.SoftDeleteEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,11 +13,7 @@ import java.util.List;
 @Table(name = "jobs")
 @Getter
 @Setter
-public class Job {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Job extends SoftDeleteEntity {
 
     @Column(nullable = false, length = 200)
     private String title;
@@ -50,21 +47,12 @@ public class Job {
 
     @Column(name = "is_active")
     private Boolean isActive = true;
-    
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
 
     @Column(name = "posted_at")
     private LocalDateTime postedAt;
 
     @Column(name = "expiry_date")
     private LocalDateTime deadline;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     @Column(columnDefinition = "json")
     private String extension;
@@ -80,8 +68,7 @@ public class Job {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        super.onCreate(); // Call parent method for createdAt/updatedAt
         if (postedAt == null) {
             postedAt = LocalDateTime.now();
         }
@@ -89,7 +76,6 @@ public class Job {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        super.onUpdate(); // Call parent method for updatedAt
     }
-
 }

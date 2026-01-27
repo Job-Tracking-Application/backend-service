@@ -2,8 +2,7 @@ package com.jobtracking.auth.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
+import com.jobtracking.common.entity.BaseEntity;
 
 @Entity
 @Table(name = "users")
@@ -12,11 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true, length = 100)
     private String username;
@@ -41,14 +36,6 @@ public class User {
     @Column(name = "sensitive_info")
     private byte[] sensitiveInfo;
 
-    @Column(name = "created_at", updatable = false)
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    @Column(name = "updated_at")
-    @Builder.Default
-    private LocalDateTime updatedAt = LocalDateTime.now();
-
     @Column(columnDefinition = "json")
     private String extension;
     
@@ -59,19 +46,12 @@ public class User {
     @Builder.Default
     private Boolean active = true;
 
+    // Override PrePersist to handle Builder defaults
     @PrePersist
     protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-        if (updatedAt == null) {
-            updatedAt = LocalDateTime.now();
+        super.onCreate(); // Call parent method for createdAt/updatedAt
+        if (active == null) {
+            active = true;
         }
     }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
 }

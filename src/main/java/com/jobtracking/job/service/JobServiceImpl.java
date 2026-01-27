@@ -1,7 +1,7 @@
 package com.jobtracking.job.service;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -10,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.jobtracking.audit.service.AuditLogService;
 import com.jobtracking.job.dto.JobWithSkillsResponse;
 import com.jobtracking.job.entity.Job;
+import com.jobtracking.job.mapper.JobMapper;
 import com.jobtracking.job.repository.JobRepository;
+import com.jobtracking.organization.entity.Organization;
 import com.jobtracking.organization.repository.OrganizationRepository;
 import com.jobtracking.profile.entity.Skill;
 import com.jobtracking.profile.repository.SkillRepository;
@@ -25,6 +27,7 @@ public class JobServiceImpl implements JobService {
     private final SkillRepository skillRepository;
     private final OrganizationRepository organizationRepository;
     private final AuditLogService auditLogService;
+    private final JobMapper jobMapper;
 
     @Override
     @Transactional
@@ -62,7 +65,9 @@ public class JobServiceImpl implements JobService {
         Job job = jobRepository.findByIdAndNotDeletedWithSkills(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
         
-        return convertToJobWithSkillsResponse(job);
+        // Get company name for the job
+        String companyName = getCompanyName(job.getCompanyId());
+        return jobMapper.toDTO(job, companyName);
     }
 
     @Override
@@ -73,8 +78,12 @@ public class JobServiceImpl implements JobService {
     @Override
     public List<JobWithSkillsResponse> getAllJobsWithSkills() {
         List<Job> jobs = jobRepository.findByDeletedAtIsNullWithSkills();
+        
+        // Create company name lookup map for efficiency
+        Map<Long, String> companyNames = createCompanyNamesMap();
+        
         return jobs.stream()
-                .map(this::convertToJobWithSkillsResponse)
+                .map(job -> jobMapper.toDTO(job, companyNames.get(job.getCompanyId())))
                 .collect(Collectors.toList());
     }
 
@@ -86,8 +95,12 @@ public class JobServiceImpl implements JobService {
     @Override
     public List<JobWithSkillsResponse> getJobsByRecruiterWithSkills(Long recruiterId) {
         List<Job> jobs = jobRepository.findByRecruiterUserIdAndDeletedAtIsNullWithSkills(recruiterId);
+        
+        // Create company name lookup map for efficiency
+        Map<Long, String> companyNames = createCompanyNamesMap();
+        
         return jobs.stream()
-                .map(this::convertToJobWithSkillsResponse)
+                .map(job -> jobMapper.toDTO(job, companyNames.get(job.getCompanyId())))
                 .collect(Collectors.toList());
     }
 
@@ -101,7 +114,10 @@ public class JobServiceImpl implements JobService {
         existingJob.setLocation(job.getLocation());
         existingJob.setMinSalary(job.getMinSalary());
         existingJob.setMaxSalary(job.getMaxSalary());
+        existingJob.setMinExperience(job.getMinExperience());
+        existingJob.setMaxExperience(job.getMaxExperience());
         existingJob.setJobType(job.getJobType());
+        existingJob.setDeadline(job.getDeadline());
 
         // Update skills
         if (skillIds != null) {
@@ -124,7 +140,7 @@ public class JobServiceImpl implements JobService {
         Job job = getJobById(jobId);
         
         // Soft delete: set deletedAt timestamp instead of actually deleting
-        job.setDeletedAt(LocalDateTime.now());
+        job.markAsDeleted(); // Use the method from SoftDeleteEntity
         job.setIsActive(false); // Also mark as inactive
         
         jobRepository.save(job);
@@ -144,47 +160,34 @@ public class JobServiceImpl implements JobService {
                 .orElseThrow(() -> new RuntimeException("Job not found"));
         
         // Restore the job
-        job.setDeletedAt(null);
+        job.restore(); // Use the method from SoftDeleteEntity
         job.setIsActive(true);
         
         jobRepository.save(job);
     }
 
-    private JobWithSkillsResponse convertToJobWithSkillsResponse(Job job) {
-        JobWithSkillsResponse response = new JobWithSkillsResponse();
-        response.setId(job.getId());
-        response.setTitle(job.getTitle());
-        response.setDescription(job.getDescription());
-        response.setLocation(job.getLocation());
-        response.setMinSalary(job.getMinSalary());
-        response.setMaxSalary(job.getMaxSalary());
-        response.setMinExperience(job.getMinExperience());
-        response.setMaxExperience(job.getMaxExperience());
-        response.setJobType(job.getJobType());
-        response.setCompanyId(job.getCompanyId());
-        
-        // Fetch and set company name
-        if (job.getCompanyId() != null) {
-            organizationRepository.findById(job.getCompanyId())
-                .ifPresent(org -> response.setCompanyName(org.getName()));
+    /**
+     * Get company name by ID
+     */
+    private String getCompanyName(Long companyId) {
+        if (companyId == null) {
+            return null;
         }
-        
-        response.setRecruiterUserId(job.getRecruiterUserId());
-        response.setIsActive(job.getIsActive());
-        response.setPostedAt(job.getPostedAt());
-        response.setDeadline(job.getDeadline());
-        response.setCreatedAt(job.getCreatedAt());
-        response.setUpdatedAt(job.getUpdatedAt());
-        
-        // Convert skills
-        if (job.getSkills() != null) {
-            List<JobWithSkillsResponse.SkillInfo> skillInfos = job.getSkills().stream()
-                    .map(skill -> new JobWithSkillsResponse.SkillInfo(skill.getId(), skill.getName()))
-                    .collect(Collectors.toList());
-            response.setSkills(skillInfos);
-        }
-        
-        return response;
+        return organizationRepository.findById(companyId)
+                .map(Organization::getName)
+                .orElse(null);
+    }
+
+    /**
+     * Create company names lookup map for efficient batch processing
+     */
+    private Map<Long, String> createCompanyNamesMap() {
+        return organizationRepository.findAll().stream()
+                .collect(Collectors.toMap(
+                        Organization::getId,
+                        Organization::getName,
+                        (existing, replacement) -> existing // Handle duplicate keys
+                ));
     }
 }
 
