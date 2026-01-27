@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import com.jobtracking.admin.dto.AdminApplicationResponse;
 import com.jobtracking.application.entity.Application;
 import com.jobtracking.application.enums.ApplicationStatus;
+import com.jobtracking.common.exception.AdminException;
+import com.jobtracking.common.exception.EntityNotFoundException;
+import com.jobtracking.common.exception.ValidationException;
 import com.jobtracking.application.repository.ApplicationRepository;
 import com.jobtracking.audit.service.AuditLogService;
 import com.jobtracking.auth.entity.User;
@@ -51,7 +54,7 @@ public class AdminApplicationService {
             try {
                 statusEnum = ApplicationStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid application status: " + status);
+                throw new ValidationException("status", "Invalid application status: " + status);
             }
         }
         
@@ -75,7 +78,7 @@ public class AdminApplicationService {
         
         // Check if application is soft deleted
         if (application.getDeletedAt() != null) {
-            throw new IllegalStateException("Application has been deleted");
+            throw new AdminException("Application has been deleted");
         }
         
         Map<Long, String> jobTitles = createJobTitlesMap();
@@ -93,7 +96,7 @@ public class AdminApplicationService {
 
         applicationRepository.findById(applicationId).ifPresentOrElse(application -> {
             if (application.getDeletedAt() != null) {
-                throw new IllegalStateException("Application is already deleted");
+                throw new AdminException("Application is already deleted");
             }
             
             // Soft delete: set deletedAt timestamp
@@ -103,7 +106,7 @@ public class AdminApplicationService {
             auditLogService.log("APPLICATION", applicationId, "ADMIN_DELETE", adminId,
                 "Application for job '" + application.getJob().getTitle() + "' deleted by admin");
         }, () -> {
-            throw new IllegalArgumentException("Application not found with ID: " + applicationId);
+            throw new EntityNotFoundException("Application", applicationId);
         });
     }
 

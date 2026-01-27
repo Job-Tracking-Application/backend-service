@@ -11,6 +11,8 @@ import com.jobtracking.auth.dto.RegisterRequest;
 import com.jobtracking.auth.dto.SecureUserResponse;
 import com.jobtracking.auth.entity.User;
 import com.jobtracking.auth.repository.UserRepository;
+import com.jobtracking.common.exception.AuthorizationException;
+import com.jobtracking.common.exception.DuplicateEntityException;
 import com.jobtracking.common.utils.DataMaskingUtil;
 import com.jobtracking.config.JwtUtil;
 
@@ -26,11 +28,11 @@ public class AuthService {
 
 	public void register(RegisterRequest request) {
 		if (userRepository.existsByEmail(request.getEmail())) {
-			throw new RuntimeException("Email already exists");
+			throw new DuplicateEntityException("User", request.getEmail());
 		}
 		
 		if (userRepository.existsByUsername(request.getUsername())) {
-			throw new RuntimeException("Username already exists");
+			throw new DuplicateEntityException("User", request.getUsername());
 		}
 
 		User user = User.builder()
@@ -52,13 +54,13 @@ public class AuthService {
        public LoginResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new AuthorizationException("Invalid credentials"));
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new AuthorizationException("Invalid credentials");
         }
 
         if (user.getActive() != null && !user.getActive()) {
-            throw new RuntimeException("User account is deactivated");
+            throw new AuthorizationException("User account is deactivated");
         }
 
         String token = jwtUtil.generateToken(user.getId(), user.getRoleId());
@@ -79,7 +81,7 @@ public class AuthService {
 		
 		// Check if user is still active
 		if (!user.getActive()) {
-			throw new RuntimeException("User account is deactivated");
+			throw new AuthorizationException("User account is deactivated");
 		}
 		
 		// Log the authentication check for security audit

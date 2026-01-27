@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import com.jobtracking.admin.dto.AdminJobResponse;
 import com.jobtracking.audit.service.AuditLogService;
+import com.jobtracking.common.exception.AdminException;
+import com.jobtracking.common.exception.EntityNotFoundException;
 import com.jobtracking.job.repository.JobRepository;
 import com.jobtracking.organization.entity.Organization;
 import com.jobtracking.organization.repository.OrganizationRepository;
@@ -55,7 +57,7 @@ public class AdminJobService {
 
         jobRepository.findById(jobId).ifPresentOrElse(job -> {
             if (job.getDeletedAt() != null) {
-                throw new IllegalStateException("Job is already deleted");
+                throw new AdminException("Job is already deleted");
             }
             
             job.setDeletedAt(LocalDateTime.now());
@@ -64,7 +66,7 @@ public class AdminJobService {
             auditLogService.log("JOB", jobId, "ADMIN_DELETE", adminId,
                 "Job '" + job.getTitle() + "' deleted by admin");
         }, () -> {
-            throw new IllegalArgumentException("Job not found with ID: " + jobId);
+            throw new EntityNotFoundException("Job", jobId);
         });
     }
 
@@ -77,7 +79,7 @@ public class AdminJobService {
 
         jobRepository.findById(jobId).ifPresentOrElse(job -> {
             if (job.getDeletedAt() != null) {
-                throw new IllegalStateException("Cannot modify deleted job");
+                throw new AdminException("Cannot modify deleted job");
             }
             
             boolean newStatus = !job.getIsActive();
@@ -88,7 +90,7 @@ public class AdminJobService {
             auditLogService.log("JOB", jobId, action, adminId,
                 "Job '" + job.getTitle() + "' " + action.toLowerCase() + " by admin");
         }, () -> {
-            throw new IllegalArgumentException("Job not found with ID: " + jobId);
+            throw new EntityNotFoundException("Job", jobId);
         });
     }
 

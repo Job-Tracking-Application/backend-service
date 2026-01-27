@@ -19,6 +19,8 @@ import com.jobtracking.application.enums.ApplicationStatus;
 import com.jobtracking.application.repository.ApplicationRepository;
 import com.jobtracking.auth.entity.User;
 import com.jobtracking.auth.repository.UserRepository;
+import com.jobtracking.common.exception.ApplicationException;
+import com.jobtracking.common.exception.DuplicateEntityException;
 import com.jobtracking.email.service.EmailService;
 import com.jobtracking.job.entity.Job;
 import com.jobtracking.job.repository.JobRepository;
@@ -51,7 +53,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .orElseThrow(() -> new IllegalArgumentException("Job not found"));
         // First guard: service-level duplicate check
         if (applicationRepository.existsByJobIdAndUserId(jobId, userId)) {
-            throw new IllegalStateException("You have already applied for this job");
+            throw new DuplicateEntityException("Application", "job " + jobId + " for user " + userId);
         }
 
         
@@ -76,7 +78,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                 
         } catch (DataIntegrityViolationException ex) {
             // Second guard: DB-level safety (race condition)
-            throw new IllegalStateException("You have already applied for this job");
+            throw new DuplicateEntityException("Application", "job " + jobId + " for user " + userId);
         }
     }
     
@@ -250,7 +252,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                     githubUrl,
                     additionalNotes);
         } catch (Exception e) {
-            throw new RuntimeException("Error processing application data", e);
+            throw new ApplicationException("Error processing application data");
         }
     }
 }

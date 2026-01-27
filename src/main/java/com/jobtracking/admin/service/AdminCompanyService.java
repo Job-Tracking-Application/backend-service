@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.jobtracking.admin.dto.AdminCompanyResponse;
 import com.jobtracking.audit.service.AuditLogService;
+import com.jobtracking.common.exception.EntityNotFoundException;
 import com.jobtracking.organization.repository.OrganizationRepository;
 import com.jobtracking.common.utils.ValidationUtil;
 
@@ -56,7 +57,7 @@ public class AdminCompanyService {
                 "Company '" + company.getName() + "' verification changed from " + 
                 oldStatus + " to " + verified);
         }, () -> {
-            throw new IllegalArgumentException("Company not found with ID: " + companyId);
+            throw new EntityNotFoundException("Company", companyId);
         });
     }
 

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.jobtracking.admin.dto.AdminUserResponse;
 import com.jobtracking.audit.service.AuditLogService;
 import com.jobtracking.auth.repository.UserRepository;
+import com.jobtracking.common.exception.EntityNotFoundException;
 import com.jobtracking.common.utils.ValidationUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -53,7 +54,7 @@ public class AdminUserService {
             auditLogService.log("USER", userId, action, adminId, 
                 "User status changed to " + (active ? "ACTIVE" : "DISABLED"));
         }, () -> {
-            throw new IllegalArgumentException("User not found with ID: " + userId);
+            throw new EntityNotFoundException("User", userId);
         });
     }
 
@@ -74,7 +75,7 @@ public class AdminUserService {
             auditLogService.log("USER", userId, "ROLE_CHANGED", adminId,
                 "Role changed from " + oldRoleId + " to " + roleId);
         }, () -> {
-            throw new IllegalArgumentException("User not found with ID: " + userId);
+            throw new EntityNotFoundException("User", userId);
         });
     }
 

@@ -7,7 +7,9 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.jobtracking.audit.service.AuditLogService;
+import com.jobtracking.common.exception.AuthorizationException;
 import com.jobtracking.common.exception.CustomException;
+import com.jobtracking.common.exception.DuplicateEntityException;
 import com.jobtracking.organization.dto.OrganizationRequest;
 import com.jobtracking.organization.dto.OrganizationResponse;
 import com.jobtracking.organization.entity.Organization;
@@ -40,7 +42,7 @@ public class OrganizationService {
     public OrganizationResponse createOrganization(OrganizationRequest request, Long recruiterUserId) {
         // Check if recruiter already has a company
         if (organizationRepository.existsByRecruiterUserId(recruiterUserId)) {
-            throw new CustomException("Recruiter already has a company profile");
+            throw new DuplicateEntityException("Company", "recruiter " + recruiterUserId);
         }
 
         Organization organization = new Organization();
@@ -67,7 +69,7 @@ public class OrganizationService {
 
         // Check if the recruiter owns this organization
         if (!organization.getRecruiterUserId().equals(recruiterUserId)) {
-            throw new CustomException("You can only update your own company profile");
+            throw new AuthorizationException("update", "company profile");
         }
 
         organization.setName(request.name());
