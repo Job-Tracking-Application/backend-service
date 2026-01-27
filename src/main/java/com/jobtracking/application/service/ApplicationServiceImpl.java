@@ -18,6 +18,7 @@ import com.jobtracking.application.enums.ApplicationStatus;
 import com.jobtracking.application.repository.ApplicationRepository;
 import com.jobtracking.auth.entity.User;
 import com.jobtracking.auth.repository.UserRepository;
+import com.jobtracking.email.service.EmailService;
 import com.jobtracking.job.entity.Job;
 import com.jobtracking.job.repository.JobRepository;
 import com.jobtracking.organization.repository.OrganizationRepository;
@@ -37,6 +38,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final JobRepository jobRepository;
     private final OrganizationRepository organizationRepository;
     private final AuditLogService auditLogService;
+    private final EmailService emailService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -153,15 +155,27 @@ public class ApplicationServiceImpl implements ApplicationService {
                     ApplicationStatus oldStatus = application.getStatus();
                     ApplicationStatus newStatus = ApplicationStatus.valueOf(updateStatusRequest.status().toUpperCase());
                     
-                    application.setStatus(newStatus);
-                    Application savedApplication = applicationRepository.save(application);
+                    // Only send email if status actually changed (including null safety)
+                    if (oldStatus == null || !oldStatus.equals(newStatus)) {
+                        application.setStatus(newStatus);
+                        Application savedApplication = applicationRepository.save(application);
+                        
+                        // Send email notification to job seeker
+                        emailService.sendStatusUpdateMail(
+                            savedApplication.getUser().getEmail(),
+                            savedApplication.getJob().getTitle(),
+                            newStatus.name()
+                        );
+                        
+                        // Log status change (performed by recruiter/admin)
+                        auditLogService.log("APPLICATION", savedApplication.getId(), "STATUS_CHANGED", 
+                            savedApplication.getJob().getRecruiterUserId(), 
+                            "Changed from " + oldStatus + " to " + newStatus);
+                        
+                        return savedApplication;
+                    }
                     
-                    // Log status change (performed by recruiter/admin)
-                    auditLogService.log("APPLICATION", savedApplication.getId(), "STATUS_CHANGED", 
-                        savedApplication.getJob().getRecruiterUserId(), 
-                        "Changed from " + oldStatus + " to " + newStatus);
-                    
-                    return savedApplication;
+                    return application;
                 })
                 .map(this::mapToApplicationResponse)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
