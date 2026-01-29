@@ -76,6 +76,7 @@ public class SecurityConfig {
                                                                 "/swagger-ui.html",
                                                                 "/webjars/**")
                                                 .permitAll()
+                                                .requestMatchers("/actuator/health").permitAll()
                                                 .anyRequest().authenticated()) // Everything else protected
 
                                 // JWT filter
