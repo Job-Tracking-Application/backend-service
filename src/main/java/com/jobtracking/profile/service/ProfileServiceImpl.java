@@ -185,7 +185,7 @@ public class ProfileServiceImpl implements ProfileService {
 		
 		// Check if user is actually a recruiter
 		if (user.getRoleId() != 2) {
-			throw new RuntimeException("User is not a recruiter");
+			throw new RuntimeException("Access denied: Only recruiters can access recruiter profiles");
 		}
 		
 		// Try to find existing profile first
@@ -197,7 +197,7 @@ public class ProfileServiceImpl implements ProfileService {
 					user.getFullname(),
 					user.getEmail(),
 					user.getUsername(),
-					null, // bio
+					"Profile not yet created. Please create a company to set up your complete recruiter profile.", // bio with helpful message
 					user.getPhone(), // phone from user
 					null, // linkedinUrl
 					null, // yearsExperience
@@ -226,7 +226,7 @@ public class ProfileServiceImpl implements ProfileService {
 
 		// Check if user is actually a recruiter
 		if (user.getRoleId() != 2) {
-			throw new RuntimeException("User is not a recruiter");
+			throw new RuntimeException("Access denied: Only recruiters can update recruiter profiles");
 		}
 
 		// Always update user info
@@ -237,9 +237,8 @@ public class ProfileServiceImpl implements ProfileService {
 		RecruiterProfile profile = recruiterProfileRepo.findByUserId(userId).orElse(null);
 		
 		if (profile == null) {
-			// No profile exists yet - this is okay, just update user info
-			// Profile will be created when company is created
-			return;
+			// No profile exists yet - this means no company was created
+			throw new RuntimeException("Cannot update recruiter profile: No company associated with your account. Please create a company first to set up your complete recruiter profile.");
 		}
 
 		// Update profile fields if profile exists

@@ -47,21 +47,26 @@ public class JobController extends BaseController {
                 .orElse(null);
 
             if (recruiterProfile == null) {
-                return ResponseUtil.error("Please create a company profile first before posting jobs");
+                return ResponseUtil.error("Recruiter profile not found. Please create a company first to set up your recruiter profile.");
             }
 
             if (recruiterProfile.getCompany() == null) {
-                return ResponseUtil.error("Please associate your profile with a company before posting jobs");
+                return ResponseUtil.error("No company associated with your profile. Please create or join a company before posting jobs.");
             }
 
             // Set recruiter and company from recruiter profile
             job.setRecruiter(recruiterProfile);
             job.setCompany(recruiterProfile.getCompany());
 
-            // Use centralized authorization utility
+            // Check company verification status
             Long companyId = recruiterProfile.getCompany().getId();
+            if (!recruiterProfile.getCompany().getVerified()) {
+                return ResponseUtil.error("Your company '" + recruiterProfile.getCompany().getName() + "' is not yet verified. Please contact admin for company verification before posting jobs.");
+            }
+
+            // Use centralized authorization utility for ownership check
             if (!authorizationUtil.isRecruiterAuthorizedForOrganization(recruiterId, companyId)) {
-                return ResponseUtil.forbidden("Only verified recruiters from verified organizations can create jobs");
+                return ResponseUtil.forbidden("You are not authorized to post jobs for this company. Please ensure you own this company and it is verified.");
             }
 
             if (skillIds == null) {
@@ -95,17 +100,22 @@ public class JobController extends BaseController {
                 .orElse(null);
 
             if (recruiterProfile == null) {
-                return ResponseUtil.error("Please create a company profile first before updating jobs");
+                return ResponseUtil.error("Recruiter profile not found. Please create a company first to set up your recruiter profile.");
             }
 
             if (recruiterProfile.getCompany() == null) {
-                return ResponseUtil.error("Please associate your profile with a company before updating jobs");
+                return ResponseUtil.error("No company associated with your profile. Please create or join a company before updating jobs.");
             }
 
-            // Use centralized authorization utility
+            // Check company verification status
             Long companyId = recruiterProfile.getCompany().getId();
+            if (!recruiterProfile.getCompany().getVerified()) {
+                return ResponseUtil.error("Your company '" + recruiterProfile.getCompany().getName() + "' is not yet verified. Please contact admin for company verification before updating jobs.");
+            }
+
+            // Use centralized authorization utility for ownership check
             if (!authorizationUtil.isRecruiterAuthorizedForOrganization(recruiterId, companyId)) {
-                return ResponseUtil.forbidden("Only verified recruiters from verified organizations can update jobs");
+                return ResponseUtil.forbidden("You are not authorized to update jobs for this company. Please ensure you own this company and it is verified.");
             }
 
             if (skillIds == null) {
