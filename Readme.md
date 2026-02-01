@@ -1,11 +1,11 @@
 # Job Tracking Backend Service
 
-A comprehensive Spring Boot REST API for job tracking application with role-based authentication, job management, and application tracking.
+A comprehensive Spring Boot REST API for job tracking application with role-based authentication, job management, and application tracking. Features enhanced error handling, company verification system, and robust profile management.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Java 17 or higher
+- Java 21 or higher
 - Maven 3.6+
 - MySQL 8.0+
 - IDE (IntelliJ IDEA, Eclipse, VS Code)
@@ -21,8 +21,8 @@ A comprehensive Spring Boot REST API for job tracking application with role-base
 2. **Configure Database**
    ```properties
    # src/main/resources/application.properties
-   spring.datasource.url=jdbc:mysql://localhost:3306/jobtracking
-   spring.datasource.username=your_username
+   spring.datasource.url=jdbc:mysql://localhost:3306/job_tracking2
+   spring.datasource.username=root
    spring.datasource.password=your_password
    ```
 
@@ -32,18 +32,21 @@ A comprehensive Spring Boot REST API for job tracking application with role-base
    ```
 
 4. **Access the API**
-   - Base URL: `http://localhost:8080`
-   - Swagger UI: `http://localhost:8080/swagger-ui.html`
+   - Base URL: `http://localhost:5000/api`
+   - Swagger UI: `http://localhost:5000/swagger-ui.html`
+   - Health Check: `http://localhost:5000/api/actuator/health`
 
 ## 🏗️ Architecture
 
 ### Technology Stack
-- **Framework**: Spring Boot 3.x
+- **Framework**: Spring Boot 3.2.1
+- **Java Version**: Java 21
 - **Security**: Spring Security + JWT
 - **Database**: MySQL with JPA/Hibernate
 - **Validation**: Bean Validation (JSR-303)
-- **Documentation**: Swagger/OpenAPI
+- **Documentation**: Swagger/OpenAPI 3
 - **Build Tool**: Maven
+- **Testing**: JUnit 5, Mockito
 
 ### Project Structure
 ```
@@ -57,24 +60,58 @@ src/main/java/com/jobtracking/
 ├── profile/               # User Profile Management
 │   ├── controller/        # Profile endpoints
 │   ├── dto/              # Profile DTOs
-│   ├── entity/           # Profile entities
+│   ├── entity/           # Profile entities (JobSeeker, Recruiter)
 │   ├── repository/       # Profile repositories
 │   └── service/          # Profile business logic
 ├── job/                  # Job Management
+│   ├── controller/       # Job CRUD operations
+│   ├── dto/             # Job DTOs
+│   ├── entity/          # Job entity with relationships
+│   ├── mapper/          # Job mapping utilities
+│   ├── repository/      # Job repository with custom queries
+│   └── service/         # Job business logic
 ├── application/          # Job Application Management
+│   ├── controller/      # Application endpoints
+│   ├── dto/            # Application DTOs
+│   ├── entity/         # Application entity
+│   ├── enums/          # Application status enum
+│   ├── repository/     # Application repository
+│   └── service/        # Application business logic
 ├── organization/         # Company/Organization Management
+│   ├── controller/      # Organization endpoints
+│   ├── dto/            # Organization DTOs
+│   ├── entity/         # Organization entity
+│   ├── repository/     # Organization repository
+│   └── service/        # Organization business logic
 ├── admin/               # Admin Management
+│   ├── controller/      # Admin endpoints
+│   ├── dto/            # Admin DTOs
+│   └── service/        # Admin services (Users, Jobs, Companies, Stats)
 ├── dashboard/           # Dashboard Statistics
 ├── audit/               # Audit Logging
+├── report/              # Reporting Services
 ├── common/              # Shared utilities
+│   ├── controller/      # Base controller
+│   ├── entity/         # Base entities (BaseEntity, SoftDeleteEntity)
+│   ├── exception/      # Custom exceptions and global handler
+│   ├── mapper/         # Base mapper utilities
+│   ├── repository/     # Base repositories
+│   ├── response/       # API response wrapper
+│   ├── service/        # Common services (Verification, Repository)
+│   └── utils/          # Utility classes (Authorization, Response, Validation)
 └── config/              # Configuration classes
+    ├── DataInitializer.java    # Test data initialization
+    ├── JwtAuthenticationFilter.java
+    ├── SecurityConfig.java
+    ├── SwaggerConfig.java
+    └── JacksonConfig.java
 ```
 
 ## 🔐 Authentication & Authorization
 
 ### Role-Based Access Control
-- **Admin (roleId: 1)**: Full system access
-- **Recruiter (roleId: 2)**: Job and application management
+- **Admin (roleId: 1)**: Full system access, user management, company verification
+- **Recruiter (roleId: 2)**: Job and application management, company profile
 - **Job Seeker (roleId: 3)**: Job search and application submission
 
 ### JWT Token Authentication
@@ -82,14 +119,58 @@ src/main/java/com/jobtracking/
 Authorization: Bearer <jwt_token>
 ```
 
-### Default Admin Account
+### Test Accounts (Created by DataInitializer)
 ```
+Admin:
 Email: admin@jobtracking.com
 Password: admin123
 Role: Admin
+
+Recruiter (with company):
+Email: chaitanya@gmail.com
+Password: chaitanya@123
+Role: Recruiter
+Company: TechSoft Pvt Ltd
+
+Job Seeker:
+Email: jobseeker@gmail.com
+Password: jobseeker123
+Role: Job Seeker
 ```
 
+## 🏢 Company Verification System
+
+### Company Profile Requirements
+- **Recruiters must create a company** before posting jobs
+- **Companies require admin verification** before job posting is allowed
+- **Automatic RecruiterProfile creation** when company is created
+- **Enhanced error messages** guide users through the process
+
+### Company Verification Flow
+1. Recruiter registers and logs in
+2. Recruiter creates company profile
+3. System automatically creates RecruiterProfile linked to company
+4. Admin verifies the company
+5. Recruiter can now post jobs
+
+### Error Messages
+The system provides specific, actionable error messages:
+- `"Recruiter profile not found. Please create a company first to set up your recruiter profile."`
+- `"Your company 'CompanyName' is not yet verified. Please contact admin for company verification before posting jobs."`
+- `"No company associated with your profile. Please create or join a company before posting jobs."`
+
 ## 📚 API Documentation
+
+### Enhanced Error Handling
+All endpoints now return consistent error responses with specific guidance:
+
+```json
+{
+  "success": false,
+  "message": "Your company 'Google' is not yet verified. Please contact admin for company verification before posting jobs.",
+  "data": null
+}
+```
 
 ### Authentication Endpoints
 
@@ -108,12 +189,6 @@ Content-Type: application/json
 }
 ```
 
-**Response:**
-```http
-200 OK
-"User registered successfully"
-```
-
 #### Login
 ```http
 POST /auth/login
@@ -128,60 +203,94 @@ Content-Type: application/json
 **Response:**
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "userId": 1,
-  "roleId": 3,
-  "fullname": "John Doe",
-  "email": "john@example.com"
-}
-```
-
-### Profile Endpoints
-
-#### Get Job Seeker Profile
-```http
-GET /profile/jobseeker
-Authorization: Bearer <token>
-```
-
-**Response:**
-```json
-{
-  "fullName": "John Doe",
-  "email": "john@example.com",
-  "userName": "johndoe123",
-  "phone": "+1234567890",
-  "skills": ["Java", "Spring Boot", "React"],
-  "resume": "https://example.com/resume",
-  "about": "Experienced developer...",
-  "education": {
-    "degree": "Bachelor of Computer Science",
-    "college": "Tech University",
-    "year": 2020
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "user": {
+      "roleId": 3,
+      "role": "JOB_SEEKER",
+      "displayName": "J*** D***",
+      "maskedEmail": "j***@example.com"
+    }
   }
 }
 ```
 
-#### Update Job Seeker Profile
+### Organization Management
+
+#### Create Company (Recruiter Only)
 ```http
-PUT /profile/jobseeker
+POST /organizations
 Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "fullName": "John Doe",
-  "phone": "+1234567890",
-  "skills": ["Java", "Spring Boot", "React"],
-  "resume": "https://example.com/resume",
-  "about": "Experienced developer...",
-  "education": "{\"degree\":\"Bachelor of Computer Science\",\"college\":\"Tech University\",\"year\":2020}"
+  "name": "My Tech Company",
+  "website": "https://mytechcompany.com",
+  "city": "Bangalore",
+  "contactEmail": "hr@mytechcompany.com",
+  "description": "Innovative technology solutions company"
 }
 ```
+
+#### Get My Company
+```http
+GET /organizations/my
+Authorization: Bearer <token>
+```
+
+#### Check Company Exists
+```http
+GET /organizations/exists
+Authorization: Bearer <token>
+```
+
+### Job Management (Enhanced)
+
+#### Create Job (Requires Verified Company)
+```http
+POST /jobs?skillIds=1&skillIds=2&skillIds=3
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Senior Java Developer",
+  "description": "Looking for experienced Java developer with Spring Boot expertise",
+  "minSalary": 80000,
+  "maxSalary": 120000,
+  "location": "Bangalore",
+  "jobType": "Full-time",
+  "isActive": true
+}
+```
+
+**Enhanced Validation:**
+- Checks for RecruiterProfile existence
+- Validates company association
+- Verifies company verification status
+- Provides specific error messages for each failure scenario
+
+### Profile Management (Enhanced)
 
 #### Get Recruiter Profile
 ```http
 GET /profile/recruiter
 Authorization: Bearer <token>
+```
+
+**Response for new recruiter (no company):**
+```json
+{
+  "fullName": "Jane Smith",
+  "email": "jane@example.com",
+  "username": "janesmith",
+  "bio": "Profile not yet created. Please create a company to set up your complete recruiter profile.",
+  "phone": "+1234567890",
+  "linkedinUrl": null,
+  "yearsExperience": null,
+  "specialization": null
+}
 ```
 
 #### Update Recruiter Profile
@@ -200,126 +309,61 @@ Content-Type: application/json
 }
 ```
 
-### Job Management Endpoints
+### Admin Endpoints (Enhanced)
 
-#### Get All Jobs
+#### Verify Company
 ```http
-GET /jobs?page=0&size=10&sortBy=createdAt&sortDir=desc
-Authorization: Bearer <token>
+PUT /admin/companies/{companyId}/verify
+Authorization: Bearer <admin_token>
 ```
-
-#### Get Job Details
-```http
-GET /jobs/{jobId}
-Authorization: Bearer <token>
-```
-
-#### Create Job (Recruiter Only)
-```http
-POST /jobs
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "title": "Senior Java Developer",
-  "description": "We are looking for...",
-  "minSalary": 80000,
-  "maxSalary": 120000,
-  "location": "New York",
-  "jobType": "Full-time",
-  "companyId": 1,
-  "skills": ["Java", "Spring Boot", "MySQL"]
-}
-```
-
-### Application Management Endpoints
-
-#### Apply for Job
-```http
-POST /applications/apply
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "jobId": 1,
-  "resumePath": "https://example.com/resume",
-  "coverLetter": "I am interested in this position..."
-}
-```
-
-#### Get My Applications
-```http
-GET /applications/my-applications?page=0&size=10
-Authorization: Bearer <token>
-```
-
-#### Update Application Status (Recruiter Only)
-```http
-PUT /applications/{applicationId}/status
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "status": "SHORTLISTED"
-}
-```
-
-### Admin Endpoints
 
 #### Get Admin Statistics
 ```http
 GET /admin/stats
-Authorization: Bearer <token>
+Authorization: Bearer <admin_token>
 ```
 
-#### Get All Users
-```http
-GET /admin/users?page=0&size=10
-Authorization: Bearer <token>
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "totalUsers": 150,
+    "totalJobs": 45,
+    "totalApplications": 320,
+    "totalCompanies": 25,
+    "verifiedCompanies": 18,
+    "pendingApplications": 45
+  }
+}
 ```
 
-#### Get All Applications
-```http
-GET /admin/applications?page=0&size=10
-Authorization: Bearer <token>
-```
+## 🗄️ Database Schema (Updated)
 
-## 🗄️ Database Schema
+### Key Relationships
 
-### Key Entities
-
-#### User
+#### RecruiterProfile → Organization (Enhanced)
 ```sql
-CREATE TABLE users (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role_id INT NOT NULL,
-    fullname VARCHAR(255) NOT NULL,
-    phone VARCHAR(20),
-    active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-#### Job Seeker Profile
-```sql
-CREATE TABLE jobseeker_profile (
+CREATE TABLE recruiter_profile (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT UNIQUE NOT NULL,
+    company_id BIGINT NOT NULL,  -- Required for job posting
     bio_en TEXT,
-    bio_mr TEXT,
-    education TEXT, -- JSON format
-    experience TEXT,
-    resume_link VARCHAR(500),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    phone VARCHAR(20),
+    linkedin_url VARCHAR(500),
+    years_experience INT,
+    specialization VARCHAR(255),
+    verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (company_id) REFERENCES companies(id)
 );
 ```
 
-#### Job
+#### Job → RecruiterProfile & Organization
 ```sql
-CREATE TABLE job (
+CREATE TABLE jobs (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
@@ -327,185 +371,284 @@ CREATE TABLE job (
     max_salary DECIMAL(10,2),
     location VARCHAR(255),
     job_type VARCHAR(50),
-    company_id BIGINT,
-    recruiter_user_id BIGINT NOT NULL,
+    company_id BIGINT NOT NULL,
+    recruiter_id BIGINT NOT NULL,  -- Links to recruiter_profile.id
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,  -- Soft delete support
+    FOREIGN KEY (company_id) REFERENCES companies(id),
+    FOREIGN KEY (recruiter_id) REFERENCES recruiter_profile(id)
+);
+```
+
+#### Companies (Enhanced)
+```sql
+CREATE TABLE companies (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    website VARCHAR(500),
+    city VARCHAR(100),
+    contact_email VARCHAR(255),
+    description TEXT,
+    verified BOOLEAN DEFAULT FALSE,  -- Admin verification required
+    recruiter_user_id BIGINT NOT NULL,  -- Owner of the company
+    extension JSON,  -- Additional metadata
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (recruiter_user_id) REFERENCES users(id)
 );
 ```
 
-#### Application
-```sql
-CREATE TABLE application (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT NOT NULL,
-    job_id BIGINT NOT NULL,
-    status VARCHAR(50) DEFAULT 'APPLIED',
-    resume_path VARCHAR(500),
-    cover_letter TEXT,
-    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (job_id) REFERENCES job(id)
-);
-```
-
-## 🔧 Configuration
+## 🔧 Configuration (Updated)
 
 ### Application Properties
 ```properties
+# Server Configuration
+server.port=5000
+server.servlet.context-path=/api
+
 # Database Configuration
-spring.datasource.url=jdbc:mysql://localhost:3306/jobtracking
+spring.datasource.url=jdbc:mysql://localhost:3306/job_tracking2
 spring.datasource.username=root
 spring.datasource.password=password
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+spring.jpa.properties.hibernate.hbm2ddl.halt_on_error=false
 
 # JWT Configuration
 jwt.secret=your-secret-key
 jwt.expiration=86400000
 
-# Server Configuration
-server.port=8080
-
-# Profile Configuration
-spring.profiles.active=dev
+# Logging Configuration
+logging.level.com.jobtracking=DEBUG
+logging.file.name=logs/job-tracking-backend.log
 ```
 
-### Security Configuration
-- JWT-based authentication
-- Role-based authorization
-- CORS enabled for frontend integration
-- Password encryption using BCrypt
+### Security Configuration (Enhanced)
+```java
+// Enhanced security with proper role mapping
+@Configuration
+@EnableMethodSecurity
+public class SecurityConfig {
+    
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/auth/register", "/auth/login").permitAll()
+                .requestMatchers(HttpMethod.GET, "/jobs", "/jobs/**").permitAll()
+                .requestMatchers("/organizations/**").hasRole("RECRUITER")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
+}
+```
 
-## 🧪 Testing
+## 🚀 Data Initialization
 
-### Run Tests
+### Automatic Test Data Creation
+The `DataInitializer` creates comprehensive test data:
+
+```java
+@Component
+@Profile({"default"})
+public class DataInitializer implements CommandLineRunner {
+    
+    @Override
+    public void run(String... args) throws Exception {
+        createTestUsers();      // Creates admin, recruiters, job seekers
+        createTestData();       // Creates companies with linked profiles
+        createTestApplications(); // Creates sample applications
+    }
+}
+```
+
+### What Gets Created:
+1. **Users**: Admin, recruiters, job seekers
+2. **Companies**: TechSoft Pvt Ltd, DataWorks Inc
+3. **RecruiterProfiles**: Automatically linked to companies
+4. **Jobs**: Sample jobs for each company
+5. **Skills**: Comprehensive skill database
+6. **Applications**: Sample job applications
+
+## 🧪 Testing & Validation
+
+### Enhanced Error Handling
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleValidation(ValidationException ex) {
+        return ResponseUtil.error(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+    
+    @ExceptionHandler(AuthorizationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAuthorization(AuthorizationException ex) {
+        return ResponseUtil.forbidden(ex.getMessage());
+    }
+}
+```
+
+### API Testing Commands
 ```bash
-mvn test
+# Test job creation with proper error handling
+curl -X POST "http://localhost:5000/api/jobs" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Test Job",
+    "description": "Test description",
+    "minSalary": 50000,
+    "maxSalary": 70000,
+    "location": "Test City",
+    "jobType": "Full-time",
+    "isActive": true
+  }'
+
+# Expected responses:
+# - 400: "Recruiter profile not found. Please create a company first..."
+# - 400: "Your company 'CompanyName' is not yet verified..."
+# - 201: Job created successfully (if all requirements met)
 ```
 
-### Test Coverage
-- Unit tests for services
-- Integration tests for controllers
-- Repository tests with @DataJpaTest
+## 🔒 Security Features (Enhanced)
 
-## 🚀 Deployment
-
-### Development
-```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+### Authorization Utilities
+```java
+@Component
+public class AuthorizationUtil {
+    
+    public boolean isRecruiterAuthorizedForOrganization(Long recruiterId, Long organizationId) {
+        return verificationService.isRecruiterAuthorizedForOrganization(recruiterId, organizationId);
+    }
+    
+    public boolean isRecruiterAuthorizedForJob(Long recruiterId, Long jobId) {
+        // Checks both ownership and company verification
+    }
+}
 ```
 
-### Production
-```bash
-mvn clean package
-java -jar target/jobtracking-backend-1.0.0.jar --spring.profiles.active=prod
+### Verification Service
+```java
+@Service
+public class VerificationService {
+    
+    public boolean isOrganizationVerified(Long organizationId) {
+        return organizationRepository.findById(organizationId)
+                .map(org -> org.getVerified() != null && org.getVerified())
+                .orElse(false);
+    }
+}
 ```
 
-### Docker Deployment
-```dockerfile
-FROM openjdk:17-jdk-slim
-COPY target/jobtracking-backend-1.0.0.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+## 🐛 Troubleshooting (Updated)
+
+### Common Issues & Solutions
+
+1. **Job Creation Fails with "Please create a company profile first"**
+   ```sql
+   -- Check if user has RecruiterProfile
+   SELECT * FROM recruiter_profile WHERE user_id = YOUR_USER_ID;
+   
+   -- If missing, create it:
+   INSERT INTO recruiter_profile (user_id, company_id, verified, created_at, updated_at)
+   VALUES (YOUR_USER_ID, YOUR_COMPANY_ID, false, NOW(), NOW());
+   ```
+
+2. **Company Not Verified Error**
+   ```sql
+   -- Verify the company (admin action)
+   UPDATE companies SET verified = true WHERE id = YOUR_COMPANY_ID;
+   ```
+
+3. **DataInitializer Not Running**
+   - Check active profile is "default"
+   - Verify database connection
+   - Check application logs for initialization errors
+
+4. **JWT Token Issues**
+   - Token expires after 24 hours
+   - Check Authorization header format: `Bearer <token>`
+   - Verify JWT secret configuration
+
+### Database Debugging
+```sql
+-- Check complete user setup
+SELECT 
+    u.id as user_id,
+    u.email,
+    u.role_id,
+    c.id as company_id,
+    c.name as company_name,
+    c.verified as company_verified,
+    rp.id as profile_id
+FROM users u
+LEFT JOIN companies c ON c.recruiter_user_id = u.id
+LEFT JOIN recruiter_profile rp ON rp.user_id = u.id
+WHERE u.email = 'your-email@example.com';
 ```
 
-## 📊 Monitoring & Logging
+## 📊 Monitoring & Logging (Enhanced)
 
 ### Audit Logging
-All critical operations are logged:
-- User registration/login
+```java
+@Service
+public class AuditLogService {
+    
+    public void log(String entityType, Long entityId, String action, Long userId) {
+        AuditLog log = new AuditLog();
+        log.setEntityType(entityType);
+        log.setEntityId(entityId);
+        log.setAction(action);
+        log.setUserId(userId);
+        log.setTimestamp(LocalDateTime.now());
+        auditLogRepository.save(log);
+    }
+}
+```
+
+### Application Logs
+- User registration/login events
+- Company creation and verification
+- Job posting attempts and failures
 - Profile updates
-- Job creation/updates
 - Application submissions
 
-### Health Check
+### Health Monitoring
 ```http
 GET /actuator/health
-```
-
-## 🔒 Security Features
-
-- JWT token-based authentication
-- Role-based access control (RBAC)
-- Password encryption
-- Input validation and sanitization
-- SQL injection prevention
-- CORS configuration
-- Rate limiting headers
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Database Connection Error**
-   - Check MySQL service is running
-   - Verify database credentials
-   - Ensure database exists
-
-2. **JWT Token Issues**
-   - Check token expiration
-   - Verify JWT secret configuration
-   - Ensure proper Authorization header format
-
-3. **Role Access Denied**
-   - Verify user role in database
-   - Check endpoint role requirements
-   - Ensure proper role mapping
-
-## 📝 API Response Formats
-
-### Success Response
-```json
-{
-  "data": { ... },
-  "message": "Operation successful",
-  "status": "success"
-}
-```
-
-### Error Response
-```json
-{
-  "error": "Error message",
-  "status": "error",
-  "timestamp": "2024-01-01T10:00:00Z"
-}
-```
-
-### Validation Error Response
-```json
-{
-  "errors": {
-    "email": "Please provide a valid email address",
-    "password": "Password must be at least 6 characters"
-  },
-  "status": "validation_error"
-}
+GET /actuator/info
+GET /actuator/metrics
 ```
 
 ## 🤝 Contributing
 
+### Development Setup
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+2. Create feature branch from `develop`
+3. Make changes with proper error handling
+4. Add/update tests
+5. Submit pull request to `develop`
 
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 📞 Support
-
-For support and questions:
-- Create an issue on GitHub
-- Contact the development team
-- Check the documentation
+### Code Standards
+- Follow Spring Boot best practices
+- Use proper exception handling
+- Add comprehensive error messages
+- Include audit logging for critical operations
+- Write meaningful commit messages
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: January 2024  
+**Version**: 2.0.0  
+**Last Updated**: February 2025  
+**Java Version**: 21  
+**Spring Boot**: 3.2.1  
+**Database**: MySQL 8.0  
 **Maintainer**: Job Tracking Development Team
