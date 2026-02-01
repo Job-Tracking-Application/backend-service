@@ -46,9 +46,9 @@ public class JobMapper extends BaseMapper {
         dto.setMinExperience(job.getMinExperience());
         dto.setMaxExperience(job.getMaxExperience());
         dto.setJobType(job.getJobType());
-        dto.setCompanyId(job.getCompanyId());
+        dto.setCompanyId(job.getCompany() != null ? job.getCompany().getId() : null);
         dto.setCompanyName(companyName);
-        dto.setRecruiterUserId(job.getRecruiterUserId());
+        dto.setRecruiterUserId(job.getRecruiter() != null && job.getRecruiter().getUser() != null ? job.getRecruiter().getUser().getId() : null);
         dto.setIsActive(job.getIsActive());
         dto.setPostedAt(job.getPostedAt());
         dto.setDeadline(job.getDeadline());
@@ -83,8 +83,9 @@ public class JobMapper extends BaseMapper {
         job.setMinExperience(dto.getMinExperience());
         job.setMaxExperience(dto.getMaxExperience());
         job.setJobType(dto.getJobType());
-        job.setCompanyId(dto.getCompanyId());
-        job.setRecruiterUserId(dto.getRecruiterUserId());
+        // Note: Company and Recruiter should be set via proper entity references in service layer
+        // job.setCompany(companyEntity); // Set in service layer
+        // job.setRecruiter(recruiterEntity); // Set in service layer
         job.setIsActive(dto.getIsActive());
         job.setPostedAt(dto.getPostedAt());
         job.setDeadline(dto.getDeadline());

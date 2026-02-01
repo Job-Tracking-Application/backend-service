@@ -129,10 +129,10 @@ public class ReportService {
             
             // Company matrix using streams
             List<Map<String, Object>> companyMatrix = companies.stream().map(company -> {
-                long jobCount = jobs.stream().filter(j -> j.getCompanyId().equals(company.getId())).count();
+                long jobCount = jobs.stream().filter(j -> j.getCompany() != null && j.getCompany().getId().equals(company.getId())).count();
                 long applicationCount = applications.stream()
                     .filter(a -> jobs.stream()
-                        .anyMatch(j -> j.getId().equals(a.getJob().getId()) && j.getCompanyId().equals(company.getId())))
+                        .anyMatch(j -> j.getId().equals(a.getJob().getId()) && j.getCompany() != null && j.getCompany().getId().equals(company.getId())))
                     .count();
                 
                 Map<String, Object> companyData = new HashMap<>();
@@ -156,7 +156,7 @@ public class ReportService {
                 Map<String, Object> jobData = new HashMap<>();
                 jobData.put("id", job.getId());
                 jobData.put("title", job.getTitle());
-                jobData.put("companyId", job.getCompanyId());
+                jobData.put("companyId", job.getCompany() != null ? job.getCompany().getId() : null);
                 jobData.put("isActive", job.getIsActive());
                 jobData.put("applicationCount", applicationCount);
                 jobData.put("createdAt", job.getCreatedAt());

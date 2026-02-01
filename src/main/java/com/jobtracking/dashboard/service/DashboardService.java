@@ -23,7 +23,7 @@ public class DashboardService {
             // Count active jobs for this recruiter (excluding soft-deleted)
             long activeJobs = 0;
             try {
-                activeJobs = jobRepository.countByRecruiterUserIdAndIsActiveTrueAndDeletedAtIsNull(recruiterId);
+                activeJobs = jobRepository.countByRecruiterIdAndIsActiveTrueAndDeletedAtIsNull(recruiterId);
             } catch (Exception e) {
                 // Error counting active jobs - use default 0
             }

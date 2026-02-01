@@ -3,7 +3,10 @@ package com.jobtracking.job.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import com.jobtracking.profile.entity.RecruiterProfile;
 import com.jobtracking.profile.entity.Skill;
+import com.jobtracking.organization.entity.Organization;
 import com.jobtracking.common.entity.SoftDeleteEntity;
 
 import java.time.LocalDateTime;
@@ -39,11 +42,15 @@ public class Job extends SoftDeleteEntity {
     @Column(name = "job_type", length = 50)
     private String jobType;
 
-    @Column(name = "company_id")
-    private Long companyId;
+    // Proper JPA relationships - Company is MANDATORY for job posting
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Organization company;
 
-    @Column(name = "recruiter_id", nullable = false)
-    private Long recruiterUserId;
+    // Job is posted by RecruiterProfile (not User directly)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recruiter_id", nullable = false)
+    private RecruiterProfile recruiter;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
@@ -60,8 +67,8 @@ public class Job extends SoftDeleteEntity {
     // Many-to-Many relationship with Skills through job_skills table
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "job_skills",
-        joinColumns = @JoinColumn(name = "job_id"),
+        name = "job_skills", 
+        joinColumns = @JoinColumn(name = "job_id"), 
         inverseJoinColumns = @JoinColumn(name = "skill_id")
     )
     private List<Skill> skills;

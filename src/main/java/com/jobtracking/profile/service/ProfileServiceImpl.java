@@ -83,7 +83,7 @@ public class ProfileServiceImpl implements ProfileService {
 
 	@Override
 	public void updateJobSeekerProfile(Long userId, UpdateProfileRequest req) {
-		// 1️⃣ Fetch user
+		// Fetch user
 		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -94,7 +94,7 @@ public class ProfileServiceImpl implements ProfileService {
 		// Username is auto-generated, not user-editable
 		userRepo.save(user);
 
-		// 2️⃣ Fetch or create profile
+		// Fetch or create profile
 		JobSeekerProfile profile = jobSeekerProfileRepo.findByUserId(userId)
 				.orElseGet(() -> {
 					JobSeekerProfile p = new JobSeekerProfile();
@@ -105,7 +105,7 @@ public class ProfileServiceImpl implements ProfileService {
 		profile.setBioEn(req.about());
 		profile.setResumeLink(req.resume());
 
-		// 3️⃣ Handle education field
+		// Handle education field
 		if (req.education() != null && !req.education().trim().isEmpty()) {
 			// If it looks like JSON, use it as is
 			if (req.education().trim().startsWith("{")) {
@@ -153,7 +153,7 @@ public class ProfileServiceImpl implements ProfileService {
 		// Save profile first to ensure it has an ID
 		profile = jobSeekerProfileRepo.save(profile);
 
-		// 4️⃣ Replace skills (delete + insert)
+		// Replace skills (delete + insert)
 		jobSeekerSkills.deleteByJobSeekerProfileId(profile.getId());
 
 		if (req.skills() != null) {
@@ -183,14 +183,27 @@ public class ProfileServiceImpl implements ProfileService {
 	public RecruiterProfileResponse getRecruiterProfile(Long userId) {
 		User user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 		
-		// Get or create profile if it doesn't exist
-		RecruiterProfile profile = recruiterProfileRepo.findByUserId(userId)
-				.orElseGet(() -> {
-					// Create a new profile if it doesn't exist
-					RecruiterProfile newProfile = new RecruiterProfile();
-					newProfile.setUser(user);
-					return recruiterProfileRepo.save(newProfile);
-				});
+		// Check if user is actually a recruiter
+		if (user.getRoleId() != 2) {
+			throw new RuntimeException("User is not a recruiter");
+		}
+		
+		// Try to find existing profile first
+		RecruiterProfile profile = recruiterProfileRepo.findByUserId(userId).orElse(null);
+		
+		if (profile == null) {
+			// Return a basic profile with user info only
+			return new RecruiterProfileResponse(
+					user.getFullname(),
+					user.getEmail(),
+					user.getUsername(),
+					null, // bio
+					user.getPhone(), // phone from user
+					null, // linkedinUrl
+					null, // yearsExperience
+					null  // specialization
+			);
+		}
 		
 		// Return record using constructor
 		return new RecruiterProfileResponse(
@@ -207,21 +220,29 @@ public class ProfileServiceImpl implements ProfileService {
 
 	@Override
 	public void updateRecruiterProfile(Long userId, UpdateRecruiterProfileRequest req) {
-		// 1️⃣ Fetch user
+		// Fetch user
 		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new RuntimeException("User not found"));
 
+		// Check if user is actually a recruiter
+		if (user.getRoleId() != 2) {
+			throw new RuntimeException("User is not a recruiter");
+		}
+
+		// Always update user info
 		user.setFullname(req.fullName());
 		userRepo.save(user);
 
-		// 2️⃣ Fetch or create profile
-		RecruiterProfile profile = recruiterProfileRepo.findByUserId(userId)
-				.orElseGet(() -> {
-					RecruiterProfile p = new RecruiterProfile();
-					p.setUser(user);
-					return p;
-				});
+		// Try to find existing profile
+		RecruiterProfile profile = recruiterProfileRepo.findByUserId(userId).orElse(null);
+		
+		if (profile == null) {
+			// No profile exists yet - this is okay, just update user info
+			// Profile will be created when company is created
+			return;
+		}
 
+		// Update profile fields if profile exists
 		profile.setBioEn(req.bio());
 		profile.setPhone(req.phone());
 		profile.setLinkedinUrl(req.linkedinUrl());

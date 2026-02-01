@@ -15,17 +15,17 @@ import com.jobtracking.common.repository.SoftDeleteRepository;
 public interface JobRepository extends SoftDeleteRepository<Job> {
     
     // Count active jobs for a recruiter (excluding soft-deleted)
-    @Query("SELECT COUNT(j) FROM Job j WHERE j.recruiterUserId = :recruiterId AND j.isActive = true AND j.deletedAt IS NULL")
-    long countByRecruiterUserIdAndIsActiveTrueAndDeletedAtIsNull(@Param("recruiterId") Long recruiterId);
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.recruiter.user.id = :recruiterId AND j.isActive = true AND j.deletedAt IS NULL")
+    long countByRecruiterIdAndIsActiveTrueAndDeletedAtIsNull(@Param("recruiterId") Long recruiterId);
     
     // Find jobs by recruiter (excluding soft-deleted) - Latest first
-    @Query("SELECT j FROM Job j WHERE j.recruiterUserId = :recruiterId AND j.deletedAt IS NULL ORDER BY j.postedAt DESC, j.createdAt DESC")
-    List<Job> findByRecruiterUserIdAndDeletedAtIsNull(@Param("recruiterId") Long recruiterId);
+    @Query("SELECT j FROM Job j WHERE j.recruiter.user.id = :recruiterId AND j.deletedAt IS NULL ORDER BY j.postedAt DESC, j.createdAt DESC")
+    List<Job> findByRecruiterIdAndDeletedAtIsNull(@Param("recruiterId") Long recruiterId);
     
     // Find jobs by recruiter with skills (excluding soft-deleted) - Latest first
     @EntityGraph(attributePaths = {"skills"})
-    @Query("SELECT j FROM Job j WHERE j.recruiterUserId = :recruiterId AND j.deletedAt IS NULL ORDER BY j.postedAt DESC, j.createdAt DESC")
-    List<Job> findByRecruiterUserIdAndDeletedAtIsNullWithSkills(@Param("recruiterId") Long recruiterId);
+    @Query("SELECT j FROM Job j WHERE j.recruiter.user.id = :recruiterId AND j.deletedAt IS NULL ORDER BY j.postedAt DESC, j.createdAt DESC")
+    List<Job> findByRecruiterIdAndDeletedAtIsNullWithSkills(@Param("recruiterId") Long recruiterId);
     
     // Find all active jobs (excluding soft-deleted) - Latest first
     @Query("SELECT j FROM Job j WHERE j.deletedAt IS NULL ORDER BY j.postedAt DESC, j.createdAt DESC")
@@ -46,10 +46,10 @@ public interface JobRepository extends SoftDeleteRepository<Job> {
     long countByIsActiveTrueAndDeletedAtIsNull();
     
     // Find jobs by company ID (excluding soft-deleted)
-    @Query("SELECT j FROM Job j WHERE j.companyId = :companyId AND j.deletedAt IS NULL ORDER BY j.postedAt DESC")
+    @Query("SELECT j FROM Job j WHERE j.company.id = :companyId AND j.deletedAt IS NULL ORDER BY j.postedAt DESC")
     List<Job> findByCompanyIdAndDeletedAtIsNull(@Param("companyId") Long companyId);
     
     // Count jobs by company ID (excluding soft-deleted)
-    @Query("SELECT COUNT(j) FROM Job j WHERE j.companyId = :companyId AND j.deletedAt IS NULL")
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.company.id = :companyId AND j.deletedAt IS NULL")
     long countByCompanyIdAndDeletedAtIsNull(@Param("companyId") Long companyId);
 }

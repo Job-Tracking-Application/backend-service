@@ -36,7 +36,8 @@ public class JobServiceImpl implements JobService {
         Job savedJob = jobRepository.save(job);
         
         // Log job creation
-        auditLogService.log("JOB", savedJob.getId(), "CREATED", savedJob.getRecruiterUserId(), 
+        auditLogService.log("JOB", savedJob.getId(), "CREATED", 
+            savedJob.getRecruiter() != null && savedJob.getRecruiter().getUser() != null ? savedJob.getRecruiter().getUser().getId() : null, 
             "Created job: " + savedJob.getTitle());
 
         // Add skills if provided
@@ -66,7 +67,7 @@ public class JobServiceImpl implements JobService {
                 .orElseThrow(() -> new RuntimeException("Job not found"));
         
         // Get company name for the job
-        String companyName = getCompanyName(job.getCompanyId());
+        String companyName = getCompanyName(job.getCompany() != null ? job.getCompany().getId() : null);
         return jobMapper.toDTO(job, companyName);
     }
 
@@ -83,24 +84,30 @@ public class JobServiceImpl implements JobService {
         Map<Long, String> companyNames = createCompanyNamesMap();
         
         return jobs.stream()
-                .map(job -> jobMapper.toDTO(job, companyNames.get(job.getCompanyId())))
+                .map(job -> {
+                    Long companyId = job.getCompany() != null ? job.getCompany().getId() : null;
+                    return jobMapper.toDTO(job, companyNames.get(companyId));
+                })
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<Job> getJobsByRecruiter(Long recruiterId) {
-        return jobRepository.findByRecruiterUserIdAndDeletedAtIsNull(recruiterId);
+        return jobRepository.findByRecruiterIdAndDeletedAtIsNull(recruiterId);
     }
 
     @Override
     public List<JobWithSkillsResponse> getJobsByRecruiterWithSkills(Long recruiterId) {
-        List<Job> jobs = jobRepository.findByRecruiterUserIdAndDeletedAtIsNullWithSkills(recruiterId);
+        List<Job> jobs = jobRepository.findByRecruiterIdAndDeletedAtIsNullWithSkills(recruiterId);
         
         // Create company name lookup map for efficiency
         Map<Long, String> companyNames = createCompanyNamesMap();
         
         return jobs.stream()
-                .map(job -> jobMapper.toDTO(job, companyNames.get(job.getCompanyId())))
+                .map(job -> {
+                    Long companyId = job.getCompany() != null ? job.getCompany().getId() : null;
+                    return jobMapper.toDTO(job, companyNames.get(companyId));
+                })
                 .collect(Collectors.toList());
     }
 
@@ -128,7 +135,8 @@ public class JobServiceImpl implements JobService {
         Job updatedJob = jobRepository.save(existingJob);
         
         // Log job update
-        auditLogService.log("JOB", updatedJob.getId(), "UPDATED", updatedJob.getRecruiterUserId(), 
+        auditLogService.log("JOB", updatedJob.getId(), "UPDATED", 
+            updatedJob.getRecruiter() != null && updatedJob.getRecruiter().getUser() != null ? updatedJob.getRecruiter().getUser().getId() : null, 
             "Updated job: " + updatedJob.getTitle());
 
         return updatedJob;
@@ -146,7 +154,8 @@ public class JobServiceImpl implements JobService {
         jobRepository.save(job);
         
         // Log job deletion (soft delete)
-        auditLogService.log("JOB", jobId, "DELETED", job.getRecruiterUserId(), 
+        auditLogService.log("JOB", jobId, "DELETED", 
+            job.getRecruiter() != null && job.getRecruiter().getUser() != null ? job.getRecruiter().getUser().getId() : null, 
             "Soft deleted job: " + job.getTitle());
         
         // Note: Skills relationship is maintained for soft delete

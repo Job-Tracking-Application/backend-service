@@ -32,8 +32,13 @@ public class AuthorizationUtil {
      */
     public boolean isRecruiterAuthorizedForJob(Long recruiterId, Long jobId) {
         return jobRepository.findById(jobId)
-                .map(job -> job.getRecruiterUserId().equals(recruiterId) && 
-                           verificationService.isOrganizationVerified(job.getCompanyId()))
+                .map(job -> {
+                    Long jobRecruiterId = job.getRecruiter() != null && job.getRecruiter().getUser() != null ? 
+                        job.getRecruiter().getUser().getId() : null;
+                    Long companyId = job.getCompany() != null ? job.getCompany().getId() : null;
+                    return recruiterId.equals(jobRecruiterId) && 
+                           verificationService.isOrganizationVerified(companyId);
+                })
                 .orElse(false);
     }
 
@@ -60,7 +65,11 @@ public class AuthorizationUtil {
      */
     public boolean isRecruiterOwnerOfJob(Long recruiterId, Long jobId) {
         return jobRepository.findById(jobId)
-                .map(job -> job.getRecruiterUserId().equals(recruiterId))
+                .map(job -> {
+                    Long jobRecruiterId = job.getRecruiter() != null && job.getRecruiter().getUser() != null ? 
+                        job.getRecruiter().getUser().getId() : null;
+                    return recruiterId.equals(jobRecruiterId);
+                })
                 .orElse(false);
     }
 }

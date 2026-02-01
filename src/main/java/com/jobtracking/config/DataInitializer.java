@@ -17,18 +17,21 @@ import com.jobtracking.job.repository.JobRepository;
 import com.jobtracking.organization.repository.OrganizationRepository;
 import com.jobtracking.organization.service.OrganizationService;
 import com.jobtracking.organization.dto.OrganizationRequest;
+import com.jobtracking.organization.entity.Organization;
 import com.jobtracking.profile.entity.JobSeekerProfile;
 import com.jobtracking.profile.entity.JobSeekerSkill;
 import com.jobtracking.profile.entity.Skill;
+import com.jobtracking.profile.entity.RecruiterProfile;
 import com.jobtracking.profile.enums.Proficiency;
 import com.jobtracking.profile.repository.JobSeekerProfileRepository;
 import com.jobtracking.profile.repository.JobSeekerSkillsRepository;
 import com.jobtracking.profile.repository.SkillRepository;
+import com.jobtracking.profile.repository.RecruiterProfileRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Component
-@Profile({"dev", "local", "test"}) // Only run in development/local/test environments, NOT in production
+@Profile({"default"}) // Enable for default profile
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
@@ -41,6 +44,7 @@ public class DataInitializer implements CommandLineRunner {
     private final JobSeekerProfileRepository jobSeekerProfileRepository;
     private final SkillRepository skillRepository;
     private final JobSeekerSkillsRepository jobSeekerSkillsRepository;
+    private final RecruiterProfileRepository recruiterProfileRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -156,65 +160,77 @@ public class DataInitializer implements CommandLineRunner {
 
             // Create test jobs
             if (jobRepository.count() == 0) {
-                Job job1 = new Job();
-                job1.setTitle("Senior Java Developer");
-                job1.setDescription("Experienced Java developer needed for enterprise applications");
-                job1.setMinSalary(80000.0);
-                job1.setMaxSalary(120000.0);
-                job1.setLocation("Bangalore");
-                job1.setJobType("Full-time");
-                job1.setCompanyId(1L); // TechSoft company ID
-                job1.setRecruiterUserId(recruiterId1); // First recruiter
-                job1.setIsActive(true);
-                jobRepository.save(job1);
+                // Get the organizations and recruiter profiles
+                Organization techSoft = organizationRepository.findById(1L).orElse(null);
+                Organization dataWorks = organizationRepository.findById(2L).orElse(null);
+                RecruiterProfile recruiter1 = recruiterProfileRepository.findByUserId(recruiterId1).orElse(null);
+                RecruiterProfile recruiter2 = recruiterProfileRepository.findByUserId(recruiterId2).orElse(null);
 
-                Job job2 = new Job();
-                job2.setTitle("Frontend React Developer");
-                job2.setDescription("React developer for modern web applications");
-                job2.setMinSalary(60000.0);
-                job2.setMaxSalary(90000.0);
-                job2.setLocation("Mumbai");
-                job2.setJobType("Full-time");
-                job2.setCompanyId(2L); // DataWorks company ID
-                job2.setRecruiterUserId(recruiterId2); // Second recruiter
-                job2.setIsActive(true);
-                jobRepository.save(job2);
+                if (techSoft != null && recruiter1 != null) {
+                    Job job1 = new Job();
+                    job1.setTitle("Senior Java Developer");
+                    job1.setDescription("Experienced Java developer needed for enterprise applications");
+                    job1.setMinSalary(80000.0);
+                    job1.setMaxSalary(120000.0);
+                    job1.setLocation("Bangalore");
+                    job1.setJobType("Full-time");
+                    job1.setCompany(techSoft);
+                    job1.setRecruiter(recruiter1);
+                    job1.setIsActive(true);
+                    jobRepository.save(job1);
+                }
 
-                Job job3 = new Job();
-                job3.setTitle("Data Analyst");
-                job3.setDescription("Analyze business data and create insights");
-                job3.setMinSalary(50000.0);
-                job3.setMaxSalary(75000.0);
-                job3.setLocation("Mumbai");
-                job3.setJobType("Full-time");
-                job3.setCompanyId(2L); // DataWorks company ID
-                job3.setRecruiterUserId(recruiterId2); // Second recruiter
-                job3.setIsActive(true);
-                jobRepository.save(job3);
+                if (dataWorks != null && recruiter2 != null) {
+                    Job job2 = new Job();
+                    job2.setTitle("Frontend React Developer");
+                    job2.setDescription("React developer for modern web applications");
+                    job2.setMinSalary(60000.0);
+                    job2.setMaxSalary(90000.0);
+                    job2.setLocation("Mumbai");
+                    job2.setJobType("Full-time");
+                    job2.setCompany(dataWorks);
+                    job2.setRecruiter(recruiter2);
+                    job2.setIsActive(true);
+                    jobRepository.save(job2);
 
-                Job job4 = new Job();
-                job4.setTitle("Full Stack Developer");
-                job4.setDescription("Full stack development with modern technologies");
-                job4.setMinSalary(70000.0);
-                job4.setMaxSalary(100000.0);
-                job4.setLocation("Bangalore");
-                job4.setJobType("Full-time");
-                job4.setCompanyId(1L); // TechSoft company ID
-                job4.setRecruiterUserId(recruiterId1); // First recruiter
-                job4.setIsActive(true);
-                jobRepository.save(job4);
+                    Job job3 = new Job();
+                    job3.setTitle("Data Analyst");
+                    job3.setDescription("Analyze business data and create insights");
+                    job3.setMinSalary(50000.0);
+                    job3.setMaxSalary(75000.0);
+                    job3.setLocation("Mumbai");
+                    job3.setJobType("Full-time");
+                    job3.setCompany(dataWorks);
+                    job3.setRecruiter(recruiter2);
+                    job3.setIsActive(true);
+                    jobRepository.save(job3);
 
-                Job job5 = new Job();
-                job5.setTitle("UI/UX Designer");
-                job5.setDescription("Design user interfaces and user experiences");
-                job5.setMinSalary(45000.0);
-                job5.setMaxSalary(70000.0);
-                job5.setLocation("Mumbai");
-                job5.setJobType("Full-time");
-                job5.setCompanyId(2L); // DataWorks company ID
-                job5.setRecruiterUserId(recruiterId2); // Second recruiter
-                job5.setIsActive(true);
-                jobRepository.save(job5);
+                    Job job5 = new Job();
+                    job5.setTitle("UI/UX Designer");
+                    job5.setDescription("Design user interfaces and user experiences");
+                    job5.setMinSalary(45000.0);
+                    job5.setMaxSalary(70000.0);
+                    job5.setLocation("Mumbai");
+                    job5.setJobType("Full-time");
+                    job5.setCompany(dataWorks);
+                    job5.setRecruiter(recruiter2);
+                    job5.setIsActive(true);
+                    jobRepository.save(job5);
+                }
+
+                if (techSoft != null && recruiter1 != null) {
+                    Job job4 = new Job();
+                    job4.setTitle("Full Stack Developer");
+                    job4.setDescription("Full stack development with modern technologies");
+                    job4.setMinSalary(70000.0);
+                    job4.setMaxSalary(100000.0);
+                    job4.setLocation("Bangalore");
+                    job4.setJobType("Full-time");
+                    job4.setCompany(techSoft);
+                    job4.setRecruiter(recruiter1);
+                    job4.setIsActive(true);
+                    jobRepository.save(job4);
+                }
             }
         } catch (Exception e) {
             // Handle test data creation errors silently

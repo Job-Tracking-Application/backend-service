@@ -124,8 +124,8 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .map(application -> {
                     // Get company name by companyId
                     String companyName = "Unknown Company";
-                    if (application.getJob().getCompanyId() != null) {
-                        companyName = organizationRepository.findById(application.getJob().getCompanyId())
+                    if (application.getJob().getCompany() != null) {
+                        companyName = organizationRepository.findById(application.getJob().getCompany().getId())
                                 .map(org -> org.getName())
                                 .orElse("Unknown Company");
                     }
@@ -163,7 +163,8 @@ public class ApplicationServiceImpl implements ApplicationService {
                         
                         // Log status change (performed by recruiter/admin)
                         auditLogService.log("APPLICATION", savedApplication.getId(), "STATUS_CHANGED", 
-                            savedApplication.getJob().getRecruiterUserId(), 
+                            savedApplication.getJob().getRecruiter() != null && savedApplication.getJob().getRecruiter().getUser() != null ? 
+                                savedApplication.getJob().getRecruiter().getUser().getId() : null, 
                             "Changed from " + oldStatus + " to " + newStatus);
                         
                         return savedApplication;

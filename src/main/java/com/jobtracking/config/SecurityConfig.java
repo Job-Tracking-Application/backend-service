@@ -27,8 +27,7 @@ public class SecurityConfig {
         }
 
         @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
+        SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
                                 // CORS
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -54,8 +53,8 @@ public class SecurityConfig {
                                                 .requestMatchers("/auth/register", "/auth/login").permitAll()
                                                 .requestMatchers("/auth/me").authenticated()
                                                 .requestMatchers(HttpMethod.GET, "/organizations").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/jobs", "/jobs/**").permitAll() // Allow public job browsing
                                                 .requestMatchers("/recruiter/jobs/**").hasRole("RECRUITER")
-                                                .requestMatchers(HttpMethod.GET, "/jobs/**").authenticated() 
                                                 .requestMatchers("/jobs/**").hasRole("RECRUITER")
                                                 .requestMatchers("/organizations/**").hasRole("RECRUITER")
                                                 .requestMatchers("/dashboard/**").authenticated()
@@ -86,18 +85,20 @@ public class SecurityConfig {
         }
 
         @Bean
-        public PasswordEncoder passwordEncoder() {
+        PasswordEncoder passwordEncoder() {
                 return new BCryptPasswordEncoder();
         }
 
         @Bean
-        public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfigurationSource corsConfigurationSource() {
 
                 CorsConfiguration config = new CorsConfiguration();
 
                 config.setAllowedOrigins(List.of(
-                                "http://localhost:5173",
-                                "http://localhost:3000",
+                                "http://localhost:5173", // Vite default
+                                "http://localhost:3000",  // React default
+                                "http://localhost:4173",  // Vite preview
+                                "http://localhost:8080",  // Alternative port
                                 "https://jobsync.vivekbhosale.in",
                                 "http://jobsync.vivekbhosale.in"));
 

@@ -45,7 +45,7 @@ public interface ApplicationRepository extends SoftDeleteRepository<Application>
     @Query("""
         SELECT COUNT(a) FROM Application a 
         JOIN a.job j 
-        WHERE j.recruiterUserId = :recruiterId AND a.status = :status AND a.deletedAt IS NULL
+        WHERE j.recruiter.user.id = :recruiterId AND a.status = :status AND a.deletedAt IS NULL
     """)
     long countApplicationsForRecruiterByStatus(@Param("recruiterId") Long recruiterId, @Param("status") ApplicationStatus status);
     
@@ -57,16 +57,16 @@ public interface ApplicationRepository extends SoftDeleteRepository<Application>
     @Query("""
         SELECT a FROM Application a 
         JOIN a.job j 
-        WHERE j.recruiterUserId = :recruiterId AND a.deletedAt IS NULL 
+        WHERE j.recruiter.user.id = :recruiterId AND a.deletedAt IS NULL 
         ORDER BY a.appliedAt DESC
     """)
-    List<Application> findByRecruiterUserId(@Param("recruiterId") Long recruiterId);
+    List<Application> findByRecruiterId(@Param("recruiterId") Long recruiterId);
     
     // Count applications by recruiter
     @Query("""
         SELECT COUNT(a) FROM Application a 
         JOIN a.job j 
-        WHERE j.recruiterUserId = :recruiterId AND a.deletedAt IS NULL
+        WHERE j.recruiter.user.id = :recruiterId AND a.deletedAt IS NULL
     """)
-    long countByRecruiterUserId(@Param("recruiterId") Long recruiterId);
+    long countByRecruiterId(@Param("recruiterId") Long recruiterId);
 }

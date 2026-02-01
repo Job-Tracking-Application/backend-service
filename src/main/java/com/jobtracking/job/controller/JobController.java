@@ -13,6 +13,8 @@ import com.jobtracking.common.utils.ResponseUtil;
 import com.jobtracking.job.dto.JobWithSkillsResponse;
 import com.jobtracking.job.entity.Job;
 import com.jobtracking.job.service.JobService;
+import com.jobtracking.profile.entity.RecruiterProfile;
+import com.jobtracking.profile.repository.RecruiterProfileRepository;
 
 @RestController
 @RequestMapping("/jobs")
@@ -20,10 +22,13 @@ public class JobController extends BaseController {
 
     private final JobService jobService;
     private final AuthorizationUtil authorizationUtil;
+    private final RecruiterProfileRepository recruiterProfileRepository;
 
-    public JobController(JobService jobService, AuthorizationUtil authorizationUtil) {
+    public JobController(JobService jobService, AuthorizationUtil authorizationUtil, 
+                        RecruiterProfileRepository recruiterProfileRepository) {
         this.jobService = jobService;
         this.authorizationUtil = authorizationUtil;
+        this.recruiterProfileRepository = recruiterProfileRepository;
     }
 
     @PostMapping
@@ -37,12 +42,27 @@ public class JobController extends BaseController {
                 return ResponseUtil.unauthorized("User not authenticated");
             }
 
-            // Use centralized authorization utility
-            if (!authorizationUtil.isRecruiterAuthorizedForOrganization(recruiterId, job.getCompanyId())) {
-                return ResponseUtil.forbidden("Only verified recruiters from verified organizations can create jobs");
+            // Get recruiter profile
+            RecruiterProfile recruiterProfile = recruiterProfileRepository.findByUserId(recruiterId)
+                .orElse(null);
+
+            if (recruiterProfile == null) {
+                return ResponseUtil.error("Please create a company profile first before posting jobs");
             }
 
-            job.setRecruiterUserId(recruiterId);
+            if (recruiterProfile.getCompany() == null) {
+                return ResponseUtil.error("Please associate your profile with a company before posting jobs");
+            }
+
+            // Set recruiter and company from recruiter profile
+            job.setRecruiter(recruiterProfile);
+            job.setCompany(recruiterProfile.getCompany());
+
+            // Use centralized authorization utility
+            Long companyId = recruiterProfile.getCompany().getId();
+            if (!authorizationUtil.isRecruiterAuthorizedForOrganization(recruiterId, companyId)) {
+                return ResponseUtil.forbidden("Only verified recruiters from verified organizations can create jobs");
+            }
 
             if (skillIds == null) {
                 skillIds = List.of();
@@ -70,8 +90,21 @@ public class JobController extends BaseController {
                 return ResponseUtil.unauthorized("User not authenticated");
             }
 
+            // Get recruiter profile
+            RecruiterProfile recruiterProfile = recruiterProfileRepository.findByUserId(recruiterId)
+                .orElse(null);
+
+            if (recruiterProfile == null) {
+                return ResponseUtil.error("Please create a company profile first before updating jobs");
+            }
+
+            if (recruiterProfile.getCompany() == null) {
+                return ResponseUtil.error("Please associate your profile with a company before updating jobs");
+            }
+
             // Use centralized authorization utility
-            if (!authorizationUtil.isRecruiterAuthorizedForOrganization(recruiterId, job.getCompanyId())) {
+            Long companyId = recruiterProfile.getCompany().getId();
+            if (!authorizationUtil.isRecruiterAuthorizedForOrganization(recruiterId, companyId)) {
                 return ResponseUtil.forbidden("Only verified recruiters from verified organizations can update jobs");
             }
 

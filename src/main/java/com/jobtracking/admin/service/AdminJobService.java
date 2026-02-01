@@ -42,7 +42,7 @@ public class AdminJobService {
                 .map(job -> new AdminJobResponse(
                         job.getId(),
                         job.getTitle(),
-                        companyNames.getOrDefault(job.getCompanyId(), "Unknown Company"),
+                        companyNames.getOrDefault(job.getCompany() != null ? job.getCompany().getId() : null, "Unknown Company"),
                         job.getIsActive(),
                         job.getCreatedAt()))
                 .toList();
